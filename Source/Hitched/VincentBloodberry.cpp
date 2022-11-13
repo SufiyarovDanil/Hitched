@@ -35,6 +35,7 @@ AVincentBloodberry::AVincentBloodberry()
 	// Set camera parameters
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCamera->SetupAttachment(Head);
+	//FirstPersonCamera->SetRelativeLocation(-100.f, 0.f, 0.f);
 	FirstPersonCamera->SetFieldOfView(100.f);
 	FirstPersonCamera->bUsePawnControlRotation = true;
 
@@ -164,13 +165,13 @@ void AVincentBloodberry::OnLeaning(float Scale)
 {
 	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
-	const FVector CurrentHeadLocation = GetHead()->GetRelativeLocation();
+	const FVector HeadCurrentLocation = GetHead()->GetRelativeLocation();
 	const FVector LeanTargetLocation = HeadOriginLocation + FVector(0.f, LeanDistance * Scale, 0.f);
-	const FVector InterpolatedHeadLocation = FMath::VInterpTo(CurrentHeadLocation, LeanTargetLocation, DeltaTime, LeanSpeed);
+	const FVector InterpolatedHeadLocation = FMath::VInterpTo(HeadCurrentLocation, LeanTargetLocation, DeltaTime, LeanSpeed);
 
-	const FRotator CurrentHeadRotation = GetHead()->GetRelativeRotation();
-	const FRotator LeanTargetRotation = HeadOriginRotation + FRotator(0.f, 0.f, LeanRotation * Scale);
-	const FRotator InterpolatedCharacterRotation = FMath::RInterpTo(CurrentHeadRotation, LeanTargetRotation, DeltaTime, LeanSpeed);
+	const FRotator HeadCurrentRotation = GetController()->GetControlRotation();
+	const FRotator LeanTargetRotation = FRotator(HeadCurrentRotation.Pitch, HeadCurrentRotation.Yaw, LeanRotation * Scale);
+	const FRotator InterpolatedCharacterRotation = FMath::RInterpTo(HeadCurrentRotation, LeanTargetRotation, DeltaTime, LeanSpeed);
 
 	GetHead()->SetRelativeLocation(InterpolatedHeadLocation);
 	GetController()->SetControlRotation(InterpolatedCharacterRotation);

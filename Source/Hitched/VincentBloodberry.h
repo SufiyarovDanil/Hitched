@@ -127,7 +127,7 @@ private:
 
 	/* Tilt to which the camera should turn */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-	float LeanRotation = 15.f;
+	float LeanRotation = 5.f;
 
 	/* the speed of leaning */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
