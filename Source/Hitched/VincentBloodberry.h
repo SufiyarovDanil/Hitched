@@ -21,10 +21,31 @@ class USoundCue;
 UENUM(BlueprintType)
 enum class EMovementState : uint8
 {
-	Walk	UMETA(DisplayName = "Walking"),
-	Sprint	UMETA(DisplayName = "Srinting"),
-	Crouch	UMETA(DisplayName = "Crouching"),
-	Vault	UMETA(DisplayName = "Vaulting")
+	Walk		UMETA(DisplayName = "Walking"),
+	Sprint		UMETA(DisplayName = "Srinting"),
+	Crouch		UMETA(DisplayName = "Crouching"),
+	FastCrouch	UMETA(DisplayName = "Fast crouching"),
+	Vault		UMETA(DisplayName = "Vaulting"),
+	RopeClimb	UMETA(DisplayName = "Rope Climbing")
+};
+
+/* Movement settings for each movement state */
+USTRUCT()
+struct FMovementCharacteristics
+{
+	GENERATED_BODY()
+
+	float MoveSpeed;
+	float FootstepVolume;
+	float CapsuleHalfHeight;
+
+	bool bCanMove;
+	bool bCanLean;
+	bool bCanAttack;
+	bool bCanStanUp;
+	bool bCanVault;
+	bool bCanJump;
+	bool bCan;
 };
 
 UCLASS()
@@ -109,6 +130,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components | Head")
 	FRotator HeadOriginRotation;
 
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's properties")
+	FMovementCharacteristics CurrentMovementCharacteristics;
+
 	/* Vector curve for smooth head bobbing */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Head bob")
 	UCurveVector* HeadBobCurve = nullptr;
@@ -125,7 +149,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanDistance = 100.f;
 
-	/* Tilt to which the camera should turn */
+	/* Tilt to which the camera should roll while leaning */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanRotation = 5.f;
 

@@ -30,12 +30,11 @@ AVincentBloodberry::AVincentBloodberry()
 	Head = CreateDefaultSubobject<USphereComponent>(TEXT("Head"));
 	Head->SetupAttachment(GetCapsuleComponent());
 	Head->SetRelativeLocation(HeadOriginLocation);
-	Head->SetSphereRadius(20.f);
+	Head->SetSphereRadius(30.f);
 
 	// Set camera parameters
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCamera->SetupAttachment(Head);
-	//FirstPersonCamera->SetRelativeLocation(-100.f, 0.f, 0.f);
 	FirstPersonCamera->SetFieldOfView(100.f);
 	FirstPersonCamera->bUsePawnControlRotation = true;
 
@@ -67,7 +66,7 @@ AVincentBloodberry::AVincentBloodberry()
 	GetCharacterMovement()->BrakingFrictionFactor = 0.f;			// Inertia movement param
 	GetCharacterMovement()->GroundFriction = 4.f;					// Inertia movement param
 	GetCharacterMovement()->BrakingDecelerationWalking = 512.f;		// Inertia movement param
-	GetCharacterMovement()->PerchRadiusThreshold = 20.f;
+	GetCharacterMovement()->PerchRadiusThreshold = 20.f;			// Radius which character can perch the ledge
 }
 
 // Called when the game starts or when spawned
@@ -88,6 +87,8 @@ void AVincentBloodberry::BeginPlay()
 		HeadBobTAnim.SetLooping(true);
 		HeadBobTAnim.SetTimelineLength(200.f);
 	}
+
+
 }
 
 // Called every frame
