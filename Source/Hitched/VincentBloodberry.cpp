@@ -20,23 +20,25 @@ AVincentBloodberry::AVincentBloodberry()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	InitMovementCharacteristics();
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(45.5f, 91.f); // Radius and half heigh, so we need to divide Vincent's height by 2 (182 / 2)
 
 	// Set head parameters
-	HeadOriginLocation = FVector(0.f, 0.f, 60.f);
-	HeadOriginRotation = FRotator(0.f, 0.f, 0.f);
+	CameraCollisionDefaultLocation = FVector(0.f, 0.f, 60.f);
+	CameraCollisionDefaulRotation = FRotator(0.f, 0.f, 0.f);
 
-	Head = CreateDefaultSubobject<USphereComponent>(TEXT("Head"));
-	Head->SetupAttachment(GetCapsuleComponent());
-	Head->SetRelativeLocation(HeadOriginLocation);
-	Head->SetSphereRadius(30.f);
+	CameraCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Head"));
+	CameraCollision->SetupAttachment(GetCapsuleComponent());
+	CameraCollision->SetRelativeLocation(CameraCollisionDefaultLocation);
+	CameraCollision->SetSphereRadius(30.f);
 
 	// Set camera parameters
-	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-	FirstPersonCamera->SetupAttachment(Head);
-	FirstPersonCamera->SetFieldOfView(100.f);
-	FirstPersonCamera->bUsePawnControlRotation = true;
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	Camera->SetupAttachment(CameraCollision);
+	Camera->SetFieldOfView(100.f);
+	Camera->bUsePawnControlRotation = true;
 
 	// Head bob curve init
 	static ConstructorHelpers::FObjectFinder<UCurveVector> HeadBobCurveAsset(
@@ -60,7 +62,6 @@ AVincentBloodberry::AVincentBloodberry()
 	//GetCharacterMovement()->bOrientRotationToMovement = true; // never uncomment this shit
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
 	GetCharacterMovement()->AirControl = 0.f;
-	GetCharacterMovement()->MaxWalkSpeed = 111.f;
 	GetCharacterMovement()->SetWalkableFloorAngle(60);
 	GetCharacterMovement()->MaxAcceleration = 1024.f;				// Inertia movement param
 	GetCharacterMovement()->BrakingFrictionFactor = 0.f;			// Inertia movement param
@@ -88,7 +89,7 @@ void AVincentBloodberry::BeginPlay()
 		HeadBobTAnim.SetTimelineLength(200.f);
 	}
 
-
+	UpdateMovementCharacteristics(EMovementState::Walk);
 }
 
 // Called every frame
@@ -125,8 +126,8 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movement method InMovingOnGround()
 {
 	const float Velocity = GetVelocity().Size2D();
-	const bool bCanHeadBob = !GetCharacterMovement()->IsFalling() && Velocity > 0.f;
-	
+	const bool bCanHeadBob = GetCharacterMovement()->IsMovingOnGround() && Velocity > 0.f;
+
 	if (bCanHeadBob)
 	{
 		if (!HeadBobTAnim.IsPlaying())
@@ -139,16 +140,28 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movem
 	{
 		if (HeadBobTAnim.IsPlaying())
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob stopped"), Velocity));
+			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob stopped")));
 			HeadBobTAnim.Stop();
 		}
 	}
+
 	HeadBobTAnim.TickTimeline(Velocity * DeltaTime);
+}
+
+void AVincentBloodberry::UpdateMovementCharacteristics(EMovementState NewMovementState)
+{
+	if (MovementDataMap.Contains(NewMovementState))
+	{
+		CurrentMovementCharacteristics = MovementDataMap[NewMovementState];
+
+		GetCharacterMovement()->MaxWalkSpeed = CurrentMovementCharacteristics.MoveSpeed;
+		GetCapsuleComponent()->SetCapsuleHalfHeight(CurrentMovementCharacteristics.CapsuleHalfHeight);
+	}
 }
 
 void AVincentBloodberry::MoveForward(float Scale)
 {
-	if (Scale != 0.0f)
+	if (Scale != 0.0f && CurrentMovementCharacteristics.bCanMove)
 	{
 		AddMovementInput(GetActorForwardVector(), Scale);
 	}
@@ -156,7 +169,7 @@ void AVincentBloodberry::MoveForward(float Scale)
 
 void AVincentBloodberry::MoveRight(float Scale)
 {
-	if (Scale != 0.0f)
+	if (Scale != 0.0f && CurrentMovementCharacteristics.bCanMove)
 	{
 		AddMovementInput(GetActorRightVector(), Scale);
 	}
@@ -164,28 +177,37 @@ void AVincentBloodberry::MoveRight(float Scale)
 
 void AVincentBloodberry::OnLeaning(float Scale)
 {
-	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	if (CurrentMovementCharacteristics.bCanLean)
+	{
+		const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
-	const FVector HeadCurrentLocation = GetHead()->GetRelativeLocation();
-	const FVector LeanTargetLocation = HeadOriginLocation + FVector(0.f, LeanDistance * Scale, 0.f);
-	const FVector InterpolatedHeadLocation = FMath::VInterpTo(HeadCurrentLocation, LeanTargetLocation, DeltaTime, LeanSpeed);
+		const FVector HeadCurrentLocation = GetHead()->GetRelativeLocation();
+		const FVector LeanTargetLocation = CameraCollisionDefaultLocation + FVector(0.f, LeanDistance * Scale, 0.f);
+		const FVector InterpolatedHeadLocation = FMath::VInterpTo(HeadCurrentLocation, LeanTargetLocation, DeltaTime, LeanSpeed);
 
-	const FRotator HeadCurrentRotation = GetController()->GetControlRotation();
-	const FRotator LeanTargetRotation = FRotator(HeadCurrentRotation.Pitch, HeadCurrentRotation.Yaw, LeanRotation * Scale);
-	const FRotator InterpolatedCharacterRotation = FMath::RInterpTo(HeadCurrentRotation, LeanTargetRotation, DeltaTime, LeanSpeed);
+		const FRotator HeadCurrentRotation = GetController()->GetControlRotation();
+		const FRotator LeanTargetRotation = FRotator(HeadCurrentRotation.Pitch, HeadCurrentRotation.Yaw, LeanRotation * Scale);
+		const FRotator InterpolatedCharacterRotation = FMath::RInterpTo(HeadCurrentRotation, LeanTargetRotation, DeltaTime, LeanSpeed);
 
-	GetHead()->SetRelativeLocation(InterpolatedHeadLocation);
-	GetController()->SetControlRotation(InterpolatedCharacterRotation);
+		GetHead()->SetRelativeLocation(InterpolatedHeadLocation);
+		GetController()->SetControlRotation(InterpolatedCharacterRotation);
+	}
 }
 
 void AVincentBloodberry::StartRunning()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 208.f;
+	if (CurrentMovementCharacteristics.bCanMove)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = CurrentMovementCharacteristics.FastMoveSpeed;
+	}
 }
 
 void AVincentBloodberry::StopRunning()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 111.f;
+	if (CurrentMovementCharacteristics.bCanMove)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = CurrentMovementCharacteristics.MoveSpeed;
+	}
 }
 
 void AVincentBloodberry::HeadBobTAnimProgress()
@@ -193,7 +215,7 @@ void AVincentBloodberry::HeadBobTAnimProgress()
 	const float TimelineValue = HeadBobTAnim.GetPlaybackPosition();
 	const FVector TimelineLoc = HeadBobCurve->GetVectorValue(TimelineValue);
 
-	FirstPersonCamera->SetRelativeLocation(TimelineLoc);
+	Camera->SetRelativeLocation(TimelineLoc);
 }
 
 void AVincentBloodberry::MakeFootstep()
@@ -202,4 +224,40 @@ void AVincentBloodberry::MakeFootstep()
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FootStepSound, GetActorLocation());
 	}
+}
+
+void AVincentBloodberry::InitMovementCharacteristics()
+{
+	FMovementCharacteristics MovementWalking;
+	MovementWalking.MoveSpeed = 111.f;
+	MovementWalking.FastMoveSpeed = 208.f;
+	MovementWalking.CapsuleHalfHeight = 91.f;
+	MovementWalking.bCanMove = true;
+	MovementWalking.bCanLean = true;
+
+	FMovementCharacteristics MovementCrouching;
+	MovementCrouching.MoveSpeed = 60.f;
+	MovementCrouching.FastMoveSpeed = 100.f;
+	MovementCrouching.CapsuleHalfHeight = 45.f;
+	MovementCrouching.bCanMove = true;
+	MovementCrouching.bCanLean = true;
+
+	FMovementCharacteristics MovementVaulting;
+	MovementCrouching.MoveSpeed = 0.f;
+	MovementCrouching.FastMoveSpeed = 0.f;
+	MovementCrouching.CapsuleHalfHeight = 45.f;
+	MovementCrouching.bCanMove = false;
+	MovementCrouching.bCanLean = false;
+
+	FMovementCharacteristics MovementRopeClimbing;
+	MovementRopeClimbing.MoveSpeed = 0.f;
+	MovementRopeClimbing.FastMoveSpeed = 0.f;
+	MovementRopeClimbing.CapsuleHalfHeight = 91.f;
+	MovementRopeClimbing.bCanMove = false;
+	MovementRopeClimbing.bCanLean = false;
+
+	MovementDataMap.Add(EMovementState::Walk, MovementWalking);
+	MovementDataMap.Add(EMovementState::Crouch, MovementCrouching);
+	MovementDataMap.Add(EMovementState::Vault, MovementVaulting);
+	MovementDataMap.Add(EMovementState::RopeClimb, MovementRopeClimbing);
 }

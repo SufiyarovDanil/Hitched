@@ -22,9 +22,7 @@ UENUM(BlueprintType)
 enum class EMovementState : uint8
 {
 	Walk		UMETA(DisplayName = "Walking"),
-	Sprint		UMETA(DisplayName = "Srinting"),
 	Crouch		UMETA(DisplayName = "Crouching"),
-	FastCrouch	UMETA(DisplayName = "Fast crouching"),
 	Vault		UMETA(DisplayName = "Vaulting"),
 	RopeClimb	UMETA(DisplayName = "Rope Climbing")
 };
@@ -35,17 +33,23 @@ struct FMovementCharacteristics
 {
 	GENERATED_BODY()
 
+	UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics")
 	float MoveSpeed;
-	float FootstepVolume;
+
+	UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics")
+	float FastMoveSpeed;
+
+	UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics")
 	float CapsuleHalfHeight;
 
+	UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics | Actions")
 	bool bCanMove;
+
+	UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics | Actions")
 	bool bCanLean;
-	bool bCanAttack;
-	bool bCanStanUp;
-	bool bCanVault;
-	bool bCanJump;
-	bool bCan;
+
+	//UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics | Actions")
+	//bool bCanAttack;
 };
 
 UCLASS()
@@ -57,21 +61,21 @@ public:
 
 	/* Returns a reference to characters's camera component */
 	UFUNCTION()
-	UCameraComponent* GetFirstPersonCamera() const { return FirstPersonCamera; }
+	UCameraComponent* GetFirstPersonCamera() const { return Camera; }
 
 	/* Returns a reference to character's head */
 	UFUNCTION()
-	USphereComponent* GetHead() const { return Head; }
+	USphereComponent* GetHead() const { return CameraCollision; }
 
 protected:
 
 	/* Character's camera component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UCameraComponent* FirstPersonCamera = nullptr;
+	UCameraComponent* Camera = nullptr;
 
 	/* Character's sphere component with collision. Protecting camera from wall clipping... maybe... */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	USphereComponent* Head = nullptr;
+	USphereComponent* CameraCollision = nullptr;
 
 private:
 
@@ -79,6 +83,9 @@ private:
 
 	/* Sets default values for this character's properties */
 	AVincentBloodberry();
+
+	/* Initializes movement characteristics for each movement state */
+	void InitMovementCharacteristics();
 
 	/* Called when the game starts or when spawned */
 	virtual void BeginPlay() override;
@@ -91,6 +98,9 @@ private:
 
 	/* Handles head bob process. Calling in every tick */
 	void HandleHeadBob(float DeltaTime);
+
+	/* Updates movement characteristics when */
+	void UpdateMovementCharacteristics(EMovementState NewMovementState);
 
 	/* Move the character forward/backward when move button is pressed
 	* @param Scale The value passed in by the Input Component
@@ -123,12 +133,16 @@ private:
 
 #pragma region VARIABLES
 
-	/* Default Head's position */
-	UPROPERTY(VisibleAnywhere, Category = "Components | Head")
-	FVector HeadOriginLocation;
+	/* Default Camera collision's location */
+	UPROPERTY(VisibleAnywhere, Category = "Components | Camera Collision")
+	FVector CameraCollisionDefaultLocation;
 
-	UPROPERTY(VisibleAnywhere, Category = "Components | Head")
-	FRotator HeadOriginRotation;
+	/* Default Camera collision's location */
+	UPROPERTY(VisibleAnywhere, Category = "Components | Camera Collision")
+	FRotator CameraCollisionDefaulRotation;
+
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's properties")
+	TMap<EMovementState, FMovementCharacteristics> MovementDataMap;
 
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's properties")
 	FMovementCharacteristics CurrentMovementCharacteristics;
