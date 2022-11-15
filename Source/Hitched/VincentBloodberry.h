@@ -99,6 +99,9 @@ private:
 	/* Handles head bob process. Calling in every tick */
 	void HandleHeadBob(float DeltaTime);
 
+	/* Changes camera transforms every frame, considering tilt, lean etc */
+	void HandleCameraTransforms();
+
 	/* Updates movement characteristics when */
 	void UpdateMovementCharacteristics(EMovementState NewMovementState);
 
@@ -141,31 +144,53 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components | Camera Collision")
 	FRotator CameraCollisionDefaulRotation;
 
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's properties")
+	/* Contains all character characteristics for each movement state */
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's Properties")
 	TMap<EMovementState, FMovementCharacteristics> MovementDataMap;
 
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's properties")
+	/* Current movement characteristics (max walk speed, capsule size etc) */
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's Properties")
 	FMovementCharacteristics CurrentMovementCharacteristics;
 
+	/* The angle at which the camera tilt roll is currently located. Changes every frame */
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
+	float CurrentCameraTiltRoll = 0.f;
+
+	/* The angle which camera have roll when character is stafing to left/right */
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
+	float CameraTiltAngle = 3.f;
+
+	/* The speed of camera tilting */
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
+	float CameraTiltSpeed = 1.f;
+
 	/* Vector curve for smooth head bobbing */
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Head bob")
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Head Bob")
 	UCurveVector* HeadBobCurve = nullptr;
 
 	/* Timeline for head bobbing when character is moving. Generated from the head bob curve */
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Head bob")
+	UPROPERTY(VisibleAnywhere, Category = "Movement | Head Bob")
 	FTimeline HeadBobTAnim;
 
 	/* Character's foot step sound */
-	UPROPERTY(VisibleAnywhere, Category = "SFX | Foot step")
+	UPROPERTY(VisibleAnywhere, Category = "SFX | Foot Step")
 	USoundCue* FootStepSound = nullptr;
+
+	/* Current head collision's Y location. Changes every frame */
+	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
+	float CurrentCameraLeanY = 0.f;
+
+	/* The angle at which the camera lean roll is currently located. Changes every frame */
+	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
+	float CurrentCameraLeanRoll = 0.f;
 
 	/* The distance how far head can move from head origin position */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanDistance = 100.f;
 
-	/* Tilt to which the camera should roll while leaning */
+	/* Angle to which the camera should roll while leaning */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-	float LeanRotation = 5.f;
+	float LeanAngle = 5.f;
 
 	/* the speed of leaning */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")

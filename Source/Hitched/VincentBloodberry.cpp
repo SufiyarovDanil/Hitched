@@ -59,7 +59,6 @@ AVincentBloodberry::AVincentBloodberry()
 	}
 	
 	// Movement settings
-	//GetCharacterMovement()->bOrientRotationToMovement = true; // never uncomment this shit
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
 	GetCharacterMovement()->AirControl = 0.f;
 	GetCharacterMovement()->SetWalkableFloorAngle(60);
@@ -98,6 +97,7 @@ void AVincentBloodberry::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	HandleHeadBob(DeltaTime);
+	HandleCameraTransforms();
 }
 
 // Called to bind functionality to input
@@ -148,6 +148,19 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movem
 	HeadBobTAnim.TickTimeline(Velocity * DeltaTime);
 }
 
+void AVincentBloodberry::HandleCameraTransforms()
+{
+	const FRotator CurrentControlRotation = GetController()->GetControlRotation();
+	const float CalculatedCameraRoll = CurrentCameraTiltRoll + CurrentCameraLeanRoll;
+	const FRotator CalculatedCameraRotation(CurrentControlRotation.Pitch, CurrentControlRotation.Yaw, CalculatedCameraRoll);
+
+	const FVector CurrentCameraCollLocation = GetHead()->GetRelativeLocation();
+	const FVector CalculatedCameraCollLocation(CurrentCameraCollLocation.X, CurrentCameraLeanY, CurrentCameraCollLocation.Z);
+
+	GetHead()->SetRelativeLocation(CalculatedCameraCollLocation);
+	GetController()->SetControlRotation(CalculatedCameraRotation);
+}
+
 void AVincentBloodberry::UpdateMovementCharacteristics(EMovementState NewMovementState)
 {
 	if (MovementDataMap.Contains(NewMovementState))
@@ -169,10 +182,14 @@ void AVincentBloodberry::MoveForward(float Scale)
 
 void AVincentBloodberry::MoveRight(float Scale)
 {
+	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
+
 	if (Scale != 0.0f && CurrentMovementCharacteristics.bCanMove)
 	{
 		AddMovementInput(GetActorRightVector(), Scale);
 	}
+
+	CurrentCameraTiltRoll = FMath::FInterpTo(CurrentCameraTiltRoll, CameraTiltAngle * Scale, DeltaTime, CameraTiltSpeed);
 }
 
 void AVincentBloodberry::OnLeaning(float Scale)
@@ -181,16 +198,8 @@ void AVincentBloodberry::OnLeaning(float Scale)
 	{
 		const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
-		const FVector HeadCurrentLocation = GetHead()->GetRelativeLocation();
-		const FVector LeanTargetLocation = CameraCollisionDefaultLocation + FVector(0.f, LeanDistance * Scale, 0.f);
-		const FVector InterpolatedHeadLocation = FMath::VInterpTo(HeadCurrentLocation, LeanTargetLocation, DeltaTime, LeanSpeed);
-
-		const FRotator HeadCurrentRotation = GetController()->GetControlRotation();
-		const FRotator LeanTargetRotation = FRotator(HeadCurrentRotation.Pitch, HeadCurrentRotation.Yaw, LeanRotation * Scale);
-		const FRotator InterpolatedCharacterRotation = FMath::RInterpTo(HeadCurrentRotation, LeanTargetRotation, DeltaTime, LeanSpeed);
-
-		GetHead()->SetRelativeLocation(InterpolatedHeadLocation);
-		GetController()->SetControlRotation(InterpolatedCharacterRotation);
+		CurrentCameraLeanY = FMath::FInterpTo(CurrentCameraLeanY, LeanDistance * Scale, DeltaTime, LeanSpeed);
+		CurrentCameraLeanRoll = FMath::FInterpTo(CurrentCameraLeanRoll, LeanAngle * Scale, DeltaTime, LeanSpeed);
 	}
 }
 
