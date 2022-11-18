@@ -3,6 +3,7 @@
 2022, 2023 Unpublished Work.
 */
 
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -121,7 +122,9 @@ private:
 	/* Stopping to sprint when sprint button is released */
 	void StopRunning();
 
-	/* Starting/stopping to lean when lean buttons are pressed/released */
+	/* Starting/stopping to lean when lean buttons are pressed/released
+	*  @param Scale the value passed in by the Input Component
+	*/
 	void OnLeaning(float Scale);
 
 	/* Ticks the head bob timeline */
