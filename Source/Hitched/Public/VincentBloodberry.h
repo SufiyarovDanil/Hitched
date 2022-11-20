@@ -48,9 +48,6 @@ struct FMovementCharacteristics
 
 	UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics | Actions")
 	bool bCanLean;
-
-	//UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics | Actions")
-	//bool bCanAttack;
 };
 
 UCLASS()
@@ -77,6 +74,10 @@ protected:
 	/* Character's sphere component with collision. Protecting camera from wall clipping... maybe... */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* CameraCollision = nullptr;
+
+	/* Character's actor component that contains light detector called [Light Gem] */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UChildActorComponent* LightGem = nullptr;
 
 private:
 

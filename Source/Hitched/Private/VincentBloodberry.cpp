@@ -5,6 +5,7 @@
 
 
 #include "VincentBloodberry.h"
+#include "LightGem.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Curves/CurveVector.h"
@@ -35,10 +36,17 @@ AVincentBloodberry::AVincentBloodberry()
 	CameraCollision->SetSphereRadius(30.f);
 
 	// Set camera parameters
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
 	Camera->SetupAttachment(CameraCollision);
 	Camera->SetFieldOfView(100.f);
 	Camera->bUsePawnControlRotation = true;
+
+	// Set light detector
+	LightGem = CreateDefaultSubobject<UChildActorComponent>(TEXT("Light Gem"));
+	LightGem->SetupAttachment(GetCapsuleComponent());
+	LightGem->SetChildActorClass(ALightGem::StaticClass());
+	LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
+	LightGem->SetUsingAbsoluteRotation(true); // When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
 
 	// Head bob curve init
 	static ConstructorHelpers::FObjectFinder<UCurveVector> HeadBobCurveAsset(
@@ -132,7 +140,7 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movem
 	{
 		if (!HeadBobTAnim.IsPlaying())
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob started")));
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob started")));
 			HeadBobTAnim.Play();
 		}
 	}
@@ -140,7 +148,7 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movem
 	{
 		if (HeadBobTAnim.IsPlaying())
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob stopped")));
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob stopped")));
 			HeadBobTAnim.Stop();
 		}
 	}

@@ -31,11 +31,11 @@ protected:
 
 	/* Capture and render top of octahedron */
 	UPROPERTY(VisibleAnywhere, Category = "Octahedron Snapshot")
-	USceneCaptureComponent2D* OctahedronTopCapture;
+	USceneCaptureComponent2D* OctahedronTopCapture = nullptr;
 
 	/* Capture and render bottom of octahedron */
 	UPROPERTY(VisibleAnywhere, Category = "Octahedron Snapshot")
-	USceneCaptureComponent2D* OctahedronBottomCapture;
+	USceneCaptureComponent2D* OctahedronBottomCapture = nullptr;
 
 private:
 
@@ -54,21 +54,13 @@ private:
 	void HandleLightLevel();
 
 	/* Finds brightest pixel of texture */
-	float GetTextureMaxPixelBrightness(UTextureRenderTarget2D* TextureTarget);
+	float AnalyzeTexture(UTextureRenderTarget2D* TextureTarget);
 
 #pragma endregion
 
 #pragma region VARIABLES
 
-	/* Rendered texture of top of octahedron */
-	UPROPERTY(VisibleAnywhere, Category = "Render Target")
-	UTextureRenderTarget2D* OctahedronTopTexture;
-
-	/* Rendered texture of bottom of octahedron */
-	UPROPERTY(VisibleAnywhere, Category = "Render Target")
-	UTextureRenderTarget2D* OctahedronBottomTexture;
-
-	/* Indicator of Character's visiblity */
+	/* Indicator of Character's visiblity. Scaled from 0 to 1 */
 	UPROPERTY(VisibleAnywhere, Category = "Light Level")
 	float LightLevel = 0.f;
 
