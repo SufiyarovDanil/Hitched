@@ -10,11 +10,15 @@
 #include "HitchedGameModeBase.generated.h"
 
 
+class AVincentBloodberry;
+
 UCLASS()
 class HITCHED_API AHitchedGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
 public:
+
 	AHitchedGameModeBase();
+
 };

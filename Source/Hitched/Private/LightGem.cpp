@@ -9,6 +9,9 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 
+// Light gem texture render sizes
+static constexpr uint32 LIGHTGEM_TEX_WIDTH = 64;
+static constexpr uint32 LIGHTGEM_TEX_HEIGHT = 64;
 
 // The brightness of octahedron's pixel is from 0 to 255.
 // We multiplying current brightness and LIGHTGEM_SCALE for normalize the output value (from 0 to 1)
@@ -24,9 +27,6 @@ ALightGem::ALightGem()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
-	// Lightgem system is a backend process, so Player should not see the octahedron
-	SetActorHiddenInGame(true);
 
 	// Init octahedron mesh
 	Octahedron = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Octahedron"));
@@ -42,28 +42,33 @@ ALightGem::ALightGem()
 	Octahedron->SetupAttachment(RootComponent);
 	Octahedron->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	Octahedron->SetCastShadow(false);
-	Octahedron->SetOnlyOwnerSee(true);
+	// Lightgem system is a backend process, so player should not see the octahedron
+	Octahedron->SetVisibleInSceneCaptureOnly(true);
 
 	// Init octahedron captures
 	OctahedronTopCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Octahedron Top Capture"));
 	OctahedronTopCapture->SetupAttachment(Octahedron);
 	OctahedronTopCapture->SetRelativeLocationAndRotation(FVector(0.f, 0.f, 15.f), FRotator(-90.f, 0.f, 45.f));
-	OctahedronTopCapture->bAutoActivate = false;
-	OctahedronTopCapture->bCaptureOnMovement = false;
-	OctahedronTopCapture->bCaptureEveryFrame = false;
+	OctahedronTopCapture->FOVAngle = 20.f;
 
 	OctahedronBottomCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Octahedron Bottom Capture"));
 	OctahedronBottomCapture->SetupAttachment(Octahedron);
 	OctahedronBottomCapture->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -15.f), FRotator(90.f, 0.f, -45.f));
-	OctahedronBottomCapture->bAutoActivate = false;
-	OctahedronBottomCapture->bCaptureOnMovement = false;
-	OctahedronBottomCapture->bCaptureEveryFrame = false;
+	OctahedronBottomCapture->FOVAngle = 20.f;
 }
 
 // Called when the game starts or when spawned
 void ALightGem::BeginPlay()
 {
 	Super::BeginPlay();
+
+	TopTexture = NewObject<UTextureRenderTarget2D>();
+	TopTexture->InitCustomFormat(LIGHTGEM_TEX_WIDTH, LIGHTGEM_TEX_HEIGHT, EPixelFormat::PF_FloatRGB, false);
+	OctahedronTopCapture->TextureTarget = TopTexture;
+
+	BottomTexture = NewObject<UTextureRenderTarget2D>();
+	BottomTexture->InitCustomFormat(LIGHTGEM_TEX_WIDTH, LIGHTGEM_TEX_HEIGHT, EPixelFormat::PF_FloatRGB, false);
+	OctahedronBottomCapture->TextureTarget = BottomTexture;
 }
 
 // Called every frame
@@ -76,25 +81,12 @@ void ALightGem::Tick(float DeltaTime)
 
 void ALightGem::HandleLightLevel()
 {
-	// Declaring textures which will be filled with scene captures
-	UTextureRenderTarget2D* TopTexture = NewObject<UTextureRenderTarget2D>();
-	TopTexture->InitAutoFormat(64, 64);
-
-	UTextureRenderTarget2D* BottomTexture = NewObject<UTextureRenderTarget2D>();
-	BottomTexture->InitAutoFormat(64, 64);
-
 	if (!TopTexture|| !BottomTexture)
 	{
 		LightLevel = 0.f;
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Texture are missed!")));
 		return;
 	}
-
-	OctahedronTopCapture->TextureTarget = TopTexture;
-	OctahedronTopCapture->CaptureScene();
-
-	OctahedronBottomCapture->TextureTarget = BottomTexture;
-	OctahedronBottomCapture->CaptureScene();
 
 	float MaxBrightnessTop = AnalyzeTexture(TopTexture);
 	float MaxBrightnessBottom = AnalyzeTexture(BottomTexture);

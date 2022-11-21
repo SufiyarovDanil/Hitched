@@ -50,6 +50,9 @@ struct FMovementCharacteristics
 	bool bCanLean;
 };
 
+/**
+ *
+ */
 UCLASS()
 class HITCHED_API AVincentBloodberry : public ACharacter
 {
@@ -64,6 +67,10 @@ public:
 	/* Returns a reference to character's head */
 	UFUNCTION()
 	USphereComponent* GetHead() const { return CameraCollision; }
+
+	/* For LightGem debugging */
+	UFUNCTION(BlueprintCallable)
+	UChildActorComponent* GetChildComp() const { return LightGem; }
 
 protected:
 

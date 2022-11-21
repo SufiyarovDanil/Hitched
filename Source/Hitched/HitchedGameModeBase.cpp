@@ -6,9 +6,13 @@
 
 #include "HitchedGameModeBase.h"
 #include "VincentBloodberry.h"
+#include "VincentHUD.h"
+//#include "Kismet/GameplayStatics.h"
 
 
 AHitchedGameModeBase::AHitchedGameModeBase()
 {
 	DefaultPawnClass = AVincentBloodberry::StaticClass();
+
+	HUDClass = AVincentHUD::StaticClass();
 }

@@ -45,7 +45,7 @@ AVincentBloodberry::AVincentBloodberry()
 	LightGem = CreateDefaultSubobject<UChildActorComponent>(TEXT("Light Gem"));
 	LightGem->SetupAttachment(GetCapsuleComponent());
 	LightGem->SetChildActorClass(ALightGem::StaticClass());
-	LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
+	//LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
 	LightGem->SetUsingAbsoluteRotation(true); // When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
 
 	// Head bob curve init
