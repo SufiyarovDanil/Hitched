@@ -18,7 +18,7 @@ class UCurveVector;
 class UCurveFloat;
 class USoundCue;
 
-/* Movement state enumerator contains all possible states */
+/* Перечисление всех возможных состояний передвижения персонажа */
 UENUM(BlueprintType)
 enum class EMovementState : uint8
 {
@@ -28,7 +28,7 @@ enum class EMovementState : uint8
 	RopeClimb	UMETA(DisplayName = "Rope Climbing")
 };
 
-/* Movement settings for each movement state */
+/* Параметры передвижения для каждого состояния */
 USTRUCT()
 struct FMovementCharacteristics
 {
@@ -60,29 +60,29 @@ class HITCHED_API AVincentBloodberry : public ACharacter
 
 public:
 
-	/* Returns a reference to characters's camera component */
+	/* Возвращает указатель на camera component персонажа */
 	UFUNCTION()
 	UCameraComponent* GetFirstPersonCamera() const { return Camera; }
 
-	/* Returns a reference to character's head */
+	/* Возвращает указатель на голову персонажа */
 	UFUNCTION()
 	USphereComponent* GetHead() const { return CameraCollision; }
 
-	/* For LightGem debugging */
+	/* Для регулировки положения сцен захвата для LightGem */
 	UFUNCTION(BlueprintCallable)
 	UChildActorComponent* GetChildComp() const { return LightGem; }
 
 protected:
 
-	/* Character's camera component */
+	/* Camera component персонажа */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UCameraComponent* Camera = nullptr;
 
-	/* Character's sphere component with collision. Protecting camera from wall clipping... maybe... */
+	/* Ыphere component персонажа с коллизией. Защищает камеру от проникновения вовнутрь тектур */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* CameraCollision = nullptr;
 
-	/* Character's actor component that contains light detector called [Light Gem] */
+	/* Actor component персонажа, который содержит индикатор видимости, называемый [Light Gem] */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UChildActorComponent* LightGem = nullptr;
 
@@ -93,7 +93,7 @@ private:
 	/* Sets default values for this character's properties */
 	AVincentBloodberry();
 
-	/* Initializes movement characteristics for each movement state */
+	/* Инициализирует параметры передвижения для каждого состояния */
 	void InitMovementCharacteristics();
 
 	/* Called when the game starts or when spawned */
@@ -105,41 +105,49 @@ private:
 	/* Called to bind functionality to input */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	/* Handles head bob process. Calling in every tick */
+	/*
+	* В этом методе идет пересчет положения камеры для создания
+	* эффекта покачивания камеры во время движения.
+	* Вызывается каждый кадр в методе Tick()
+	*/
 	void HandleHeadBob(float DeltaTime);
 
-	/* Changes camera transforms every frame, considering tilt, lean etc */
+	/* Меняет положение головы, учитывая тильт, наклоны и т.д. */
 	void HandleCameraTransforms();
 
-	/* Updates movement characteristics when */
+	/* Обновляет параметры передвижения персонажа */
 	void UpdateMovementCharacteristics(EMovementState NewMovementState);
 
-	/* Move the character forward/backward when move button is pressed
-	* @param Scale The value passed in by the Input Component
+	/*
+	* Переещает персонажа вперед/назад, когда кнопка движения нажата
+	* @param Scale получена из Input Component
 	*/
 	void MoveForward(float Scale);
 
-	/* Move the character left/right when move button is released
-	* @param Scale The value passed in by the Input Component
+	/*
+	* Переещает персонажа влево/вправо, когда кнопка движения нажата
+	* @param Scale получена из Input Component
 	*/
 	void MoveRight(float Scale);
 
-	/* Starting to sprint when sprint button is pressed */
+	/* Персонаж начинает бег, когда нажата кнопка */
 	void StartRunning();
 
-	/* Stopping to sprint when sprint button is released */
+	/* Прекращает бег, когда кнопка отпущена */
 	void StopRunning();
 
-	/* Starting/stopping to lean when lean buttons are pressed/released
-	*  @param Scale the value passed in by the Input Component
+	/*
+	* Начинает/прекращает делать наклоны в стороны, когда определенная
+	* кнопка нажата/отпущена
+	* @param Scale получена из Input Component
 	*/
 	void OnLeaning(float Scale);
 
-	/* Ticks the head bob timeline */
+	/* Таймлайн функция, отвечающая за плавное покачивание камеры. Биндится в HeadbobTAnim */
 	UFUNCTION()
 	void HeadBobTAnimProgress();
 
-	/* Event for head bob timeline */
+	/* Ивент, срабатывающий в HeadbobTAnim в определенных точках времени */
 	UFUNCTION()
 	void MakeFootstep();
 
@@ -147,63 +155,63 @@ private:
 
 #pragma region VARIABLES
 
-	/* Default Camera collision's location */
+	/* Местонахождение головы персонажа по умолчанию */
 	UPROPERTY(VisibleAnywhere, Category = "Components | Camera Collision")
 	FVector CameraCollisionDefaultLocation;
 
-	/* Default Camera collision's location */
+	/* Поворот головы персонажа по умолчанию */
 	UPROPERTY(VisibleAnywhere, Category = "Components | Camera Collision")
 	FRotator CameraCollisionDefaulRotation;
 
-	/* Contains all character characteristics for each movement state */
+	/* Содержит параметры передвижения для каждого состояния */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's Properties")
 	TMap<EMovementState, FMovementCharacteristics> MovementDataMap;
 
-	/* Current movement characteristics (max walk speed, capsule size etc) */
+	/* Теукщие параметры передвижения (Скорость ходьбы, размер капсулы и т.д.) */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Character's Properties")
 	FMovementCharacteristics CurrentMovementCharacteristics;
 
-	/* The angle at which the camera tilt roll is currently located. Changes every frame */
+	/* Значение угла крена Camera tilt в текущий момент. Изменятеся каждый кадр */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
 	float CurrentCameraTiltRoll = 0.f;
 
-	/* The angle which camera have roll when character is stafing to left/right */
+	/* Угол, на который камера может крениться, когда персонаж стрейфится влево/вправо */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-	float CameraTiltAngle = 3.f;
+	float CameraTiltAngle = 0.7f;
 
-	/* The speed of camera tilting */
+	/* Скорость крена Camera tilt */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-	float CameraTiltSpeed = 1.f;
+	float CameraTiltSpeed = 5.f;
 
-	/* Vector curve for smooth head bobbing */
+	/* Vector curve для плавного покачивания камеры */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Head Bob")
 	UCurveVector* HeadBobCurve = nullptr;
 
-	/* Timeline for head bobbing when character is moving. Generated from the head bob curve */
+	/* Timeline для покачивания камеры, когда персонаж передвигается */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Head Bob")
 	FTimeline HeadBobTAnim;
 
-	/* Character's foot step sound */
+	/* Звуки шагов персонажа */
 	UPROPERTY(VisibleAnywhere, Category = "SFX | Foot Step")
 	USoundCue* FootStepSound = nullptr;
 
-	/* Current head collision's Y location. Changes every frame */
+	/* Текущее относительное местоположение головы по оси Y. Менятеся каждый кадр */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float CurrentCameraLeanY = 0.f;
 
-	/* The angle at which the camera lean roll is currently located. Changes every frame */
+	/* Текущее значение угла крена головы, когда персонаж наклоняется. Меняется каждый кадр */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float CurrentCameraLeanRoll = 0.f;
 
-	/* The distance how far head can move from head origin position */
+	/* Расстояние, на которое персонаж может наклониться */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanDistance = 100.f;
 
-	/* Angle to which the camera should roll while leaning */
+	/* Угол, на который камера может повернуться, когда персонаж наклоняется */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanAngle = 5.f;
 
-	/* the speed of leaning */
+	/* Скорость наклона */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanSpeed = 5.f;
 

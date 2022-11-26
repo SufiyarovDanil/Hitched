@@ -9,15 +9,17 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 
-// Light gem texture render sizes
+// Размер текстур, на которых будет рендериться октаэдр
 static constexpr uint32 LIGHTGEM_TEX_WIDTH = 64;
 static constexpr uint32 LIGHTGEM_TEX_HEIGHT = 64;
 
-// The brightness of octahedron's pixel is from 0 to 255.
-// We multiplying current brightness and LIGHTGEM_SCALE for normalize the output value (from 0 to 1)
+// Уровень яркости пикселя варьируется от 0 до 255
+// Мы умножаем полученное значение яркости на этот коэффициент
+// чтобы нормировать значение.
 static constexpr float LIGHTGEM_SCALE = 1.f / 255.f;
 
-// Coefficients by which to multiply the corresponding color values for the brightness formula
+// Коэффициенты, на которые будут умножаться соответствующие
+// цветовые каналы для формулы нахождения яркости пикселя
 static constexpr float LIGHTGEM_R = 0.299;
 static constexpr float LIGHTGEM_G = 0.587;
 static constexpr float LIGHTGEM_B = 0.114;
@@ -28,7 +30,7 @@ ALightGem::ALightGem()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Init octahedron mesh
+	// Инициализация статического меша октаэдра
 	Octahedron = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Octahedron"));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> OctahedronAsset(
@@ -42,17 +44,21 @@ ALightGem::ALightGem()
 	Octahedron->SetupAttachment(RootComponent);
 	Octahedron->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	Octahedron->SetCastShadow(false);
-	// Lightgem system is a backend process, so player should not see the octahedron
+	// Lightgem Механика - это скрытый процесс, поэтому все видимые части нужно скрыть от глаз игрока
 	Octahedron->SetVisibleInSceneCaptureOnly(true);
 
-	// Init octahedron captures
+	// Инициализации захватов сцен
 	OctahedronTopCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Octahedron Top Capture"));
 	OctahedronTopCapture->SetupAttachment(Octahedron);
+	// Относительное положение захватов сцен и их угол обзора регулировался
+	// и имеет на данный момнет оптимальные значения
 	OctahedronTopCapture->SetRelativeLocationAndRotation(FVector(0.f, 0.f, 15.f), FRotator(-90.f, 0.f, 45.f));
 	OctahedronTopCapture->FOVAngle = 20.f;
 
 	OctahedronBottomCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Octahedron Bottom Capture"));
 	OctahedronBottomCapture->SetupAttachment(Octahedron);
+	// Относительное положение захватов сцен и их угол обзора регулировался
+	// и имеет на данный момнет оптимальные значения
 	OctahedronBottomCapture->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -15.f), FRotator(90.f, 0.f, -45.f));
 	OctahedronBottomCapture->FOVAngle = 20.f;
 }
@@ -81,7 +87,7 @@ void ALightGem::Tick(float DeltaTime)
 
 void ALightGem::HandleLightLevel()
 {
-	if (!TopTexture|| !BottomTexture)
+	if (!TopTexture || !BottomTexture)
 	{
 		LightLevel = 0.f;
 		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Texture are missed!")));
@@ -107,7 +113,7 @@ float ALightGem::AnalyzeTexture(UTextureRenderTarget2D* TextureTarget)
 
 	for (const auto &Pixel : TexturePixels)
 	{
-		// Use a formula to determine brightness based on pixel color values
+		// Используется формула для вычисления уровня яркости RGB пикселя
 		float PixelBrightness = Pixel.R * LIGHTGEM_R + Pixel.G * LIGHTGEM_G + Pixel.B * LIGHTGEM_B;
 
 		if (PixelBrightness > CurrentBrightestPixel)

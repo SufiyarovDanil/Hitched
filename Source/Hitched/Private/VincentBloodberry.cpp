@@ -23,8 +23,8 @@ AVincentBloodberry::AVincentBloodberry()
 
 	InitMovementCharacteristics();
 
-	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(45.5f, 91.f); // Radius and half heigh, so we need to divide Vincent's height by 2 (182 / 2)
+	// Задаем размеры капсулы. Тут надо делить рост Винсента пополам.
+	GetCapsuleComponent()->InitCapsuleSize(45.5f, 91.f);
 
 	// Set head parameters
 	CameraCollisionDefaultLocation = FVector(0.f, 0.f, 60.f);
@@ -45,8 +45,10 @@ AVincentBloodberry::AVincentBloodberry()
 	LightGem = CreateDefaultSubobject<UChildActorComponent>(TEXT("Light Gem"));
 	LightGem->SetupAttachment(GetCapsuleComponent());
 	LightGem->SetChildActorClass(ALightGem::StaticClass());
-	//LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
-	LightGem->SetUsingAbsoluteRotation(true); // When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
+	LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
+	// когда персонаж поворачивается, вместе с ним поворачивается и LightGem, что сильно
+	// влияет на уровень видимости. Поэтому нужно залочить вращение этого компонента.
+	LightGem->SetUsingAbsoluteRotation(true);
 
 	// Head bob curve init
 	static ConstructorHelpers::FObjectFinder<UCurveVector> HeadBobCurveAsset(
@@ -113,17 +115,17 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// Mouse things
+	// Управление мышью
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("Look Up", this, &APawn::AddControllerPitchInput);
 
-	// Action input
+	// Действия
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAxis("Lean", this, &AVincentBloodberry::OnLeaning);
 
-	// Movement input
+	// Передвижение
 	PlayerInputComponent->BindAxis("Move Forward", this, &AVincentBloodberry::MoveForward);
 	PlayerInputComponent->BindAxis("Move Right", this, &AVincentBloodberry::MoveRight);
 
@@ -131,7 +133,7 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Run", IE_Released, this, &AVincentBloodberry::StopRunning);
 }
 
-void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movement method InMovingOnGround()
+void AVincentBloodberry::HandleHeadBob(float DeltaTime)
 {
 	const float Velocity = GetVelocity().Size2D();
 	const bool bCanHeadBob = GetCharacterMovement()->IsMovingOnGround() && Velocity > 0.f;
@@ -140,7 +142,6 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movem
 	{
 		if (!HeadBobTAnim.IsPlaying())
 		{
-			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob started")));
 			HeadBobTAnim.Play();
 		}
 	}
@@ -148,7 +149,6 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movem
 	{
 		if (HeadBobTAnim.IsPlaying())
 		{
-			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob stopped")));
 			HeadBobTAnim.Stop();
 		}
 	}
