@@ -216,4 +216,24 @@ private:
 	float LeanSpeed = 5.f;
 	/*≈¡¿Õ€… √»“ ¡Àﬂ“‹ —” ¿  ¿ ¿Œ√Œ ’”ﬂ?????????*/
 #pragma endregion
+
+#pragma region MOVEMENT_VALUES
+	// not implemented
+	UPROPERTY()
+	bool bIsCrouching = false;
+
+	UPROPERTY()
+	bool bIsRunning = false;
+
+	UPROPERTY()
+	bool bCanMove = false;
+
+	UPROPERTY()
+	bool bCanLean = false;
+
+	UPROPERTY()
+	bool bCanCrouch = false;
+
+#pragma endregion
+
 };
