@@ -214,6 +214,6 @@ private:
 	/* Скорость наклона */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanSpeed = 5.f;
-
+	/*ЕБАНЫЙ ГИТ БЛЯТЬ СУКА КАКАОГО ХУЯ?????????*/
 #pragma endregion
 };
