@@ -18,13 +18,14 @@
 // Sets default values
 AVincentBloodberry::AVincentBloodberry()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	InitMovementCharacteristics();
+	CurrentMovementState = EMovementState::Walk;
 
-	// Задаем размеры капсулы. Тут надо делить рост Винсента пополам.
-	GetCapsuleComponent()->InitCapsuleSize(45.5f, 91.f);
+	// Set size for collision capsule
+	GetCapsuleComponent()->InitCapsuleSize(45.5f, 91.f); // Radius and half heigh, so we need to divide Vincent's height by 2 (182 / 2)
 
 	// Set head parameters
 	CameraCollisionDefaultLocation = FVector(0.f, 0.f, 60.f);
@@ -46,9 +47,7 @@ AVincentBloodberry::AVincentBloodberry()
 	LightGem->SetupAttachment(GetCapsuleComponent());
 	LightGem->SetChildActorClass(ALightGem::StaticClass());
 	LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
-	// когда персонаж поворачивается, вместе с ним поворачивается и LightGem, что сильно
-	// влияет на уровень видимости. Поэтому нужно залочить вращение этого компонента.
-	LightGem->SetUsingAbsoluteRotation(true);
+	LightGem->SetUsingAbsoluteRotation(true); // When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
 
 	// Head bob curve init
 	static ConstructorHelpers::FObjectFinder<UCurveVector> HeadBobCurveAsset(
@@ -62,21 +61,33 @@ AVincentBloodberry::AVincentBloodberry()
 	// Sound base init
 	static ConstructorHelpers::FObjectFinder<USoundCue> SoundCueAsset(
 		TEXT("SoundCue'/Game/Vincent/SFX/FootstepCue.FootstepCue'"));
-	
+
 	if (SoundCueAsset.Succeeded())
 	{
 		FootStepSound = SoundCueAsset.Object;
 	}
-	
+
+	// Crouch curve
+	static ConstructorHelpers::FObjectFinder<UCurveFloat> CrouchCurveAsset(
+		TEXT("CurveFloat'/Game/Vincent/TimelineAnims/CrouchCurve.CrouchCurve'"));
+
+	if (CrouchCurveAsset.Succeeded())
+	{
+		CrouchCurve = CrouchCurveAsset.Object;
+	}
+
 	// Movement settings
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
 	GetCharacterMovement()->AirControl = 0.f;
 	GetCharacterMovement()->SetWalkableFloorAngle(60);
-	GetCharacterMovement()->MaxAcceleration = 1024.f;				// Inertia movement param
-	GetCharacterMovement()->BrakingFrictionFactor = 0.f;			// Inertia movement param
-	GetCharacterMovement()->GroundFriction = 4.f;					// Inertia movement param
-	GetCharacterMovement()->BrakingDecelerationWalking = 512.f;		// Inertia movement param
-	GetCharacterMovement()->PerchRadiusThreshold = 20.f;			// Radius which character can perch the ledge
+
+	// Inertia params
+	GetCharacterMovement()->MaxAcceleration = 1024.f;
+	GetCharacterMovement()->BrakingFrictionFactor = 0.f;
+	GetCharacterMovement()->GroundFriction = 4.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 512.f;
+
+	GetCharacterMovement()->PerchRadiusThreshold = 20.f;
 }
 
 // Called when the game starts or when spawned
@@ -84,7 +95,8 @@ void AVincentBloodberry::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HeadBobCurve) {
+	if (HeadBobCurve)
+	{
 		FOnTimelineVector TimelineCallback;
 		FOnTimelineEvent FootstepEvent;
 
@@ -98,7 +110,22 @@ void AVincentBloodberry::BeginPlay()
 		HeadBobTAnim.SetTimelineLength(200.f);
 	}
 
-	UpdateMovementCharacteristics(EMovementState::Walk);
+	if (CrouchCurve)
+	{
+		//if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Crouching222")));
+		FOnTimelineFloat Callback;
+		Callback.BindUFunction(this, FName(TEXT("CrouchTAnimProgress")));
+
+		CrouchTAnim.AddInterpFloat(CrouchCurve, Callback);
+		CrouchTAnim.SetLooping(false);
+		CrouchTAnim.SetTimelineLength(0.4f);
+	}
+
+	if (MovementDataMap.Contains(EMovementState::Walk))
+	{
+		CurrentMovementState = EMovementState::Walk;
+		UpdateMovementCharacteristics(CurrentMovementState);
+	}
 }
 
 // Called every frame
@@ -108,6 +135,7 @@ void AVincentBloodberry::Tick(float DeltaTime)
 
 	HandleHeadBob(DeltaTime);
 	HandleCameraTransforms();
+	CrouchTAnim.TickTimeline(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -115,17 +143,19 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// Управление мышью
+	// Mouse things
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("Look Up", this, &APawn::AddControllerPitchInput);
 
-	// Действия
+	// Action input
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	PlayerInputComponent->BindKey(EKeys::C, IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
+
 	PlayerInputComponent->BindAxis("Lean", this, &AVincentBloodberry::OnLeaning);
 
-	// Передвижение
+	// Movement input
 	PlayerInputComponent->BindAxis("Move Forward", this, &AVincentBloodberry::MoveForward);
 	PlayerInputComponent->BindAxis("Move Right", this, &AVincentBloodberry::MoveRight);
 
@@ -133,7 +163,7 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Run", IE_Released, this, &AVincentBloodberry::StopRunning);
 }
 
-void AVincentBloodberry::HandleHeadBob(float DeltaTime)
+void AVincentBloodberry::HandleHeadBob(float DeltaTime) // check character movement method InMovingOnGround()
 {
 	const float Velocity = GetVelocity().Size2D();
 	const bool bCanHeadBob = GetCharacterMovement()->IsMovingOnGround() && Velocity > 0.f;
@@ -142,6 +172,7 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime)
 	{
 		if (!HeadBobTAnim.IsPlaying())
 		{
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob started")));
 			HeadBobTAnim.Play();
 		}
 	}
@@ -149,6 +180,7 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime)
 	{
 		if (HeadBobTAnim.IsPlaying())
 		{
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Head bob stopped")));
 			HeadBobTAnim.Stop();
 		}
 	}
@@ -171,18 +203,44 @@ void AVincentBloodberry::HandleCameraTransforms()
 
 void AVincentBloodberry::UpdateMovementCharacteristics(EMovementState NewMovementState)
 {
-	if (MovementDataMap.Contains(NewMovementState))
+	if (!MovementDataMap.Contains(NewMovementState))
 	{
-		CurrentMovementCharacteristics = MovementDataMap[NewMovementState];
-
-		GetCharacterMovement()->MaxWalkSpeed = CurrentMovementCharacteristics.MoveSpeed;
-		GetCapsuleComponent()->SetCapsuleHalfHeight(CurrentMovementCharacteristics.CapsuleHalfHeight);
+		return;
 	}
+
+	CurrentMovementState = NewMovementState;
+
+	GetCharacterMovement()->MaxWalkSpeed =
+		(bIsRunning) ? MovementDataMap[CurrentMovementState].FastMoveSpeed : MovementDataMap[CurrentMovementState].MoveSpeed;
+
+	bCanMove = MovementDataMap[CurrentMovementState].bCanMove;
+	bCanLean = MovementDataMap[CurrentMovementState].bCanLean;
+	bCanCrouch = MovementDataMap[CurrentMovementState].bCanCrouch;
+
+	/*switch (NewMovementState)
+	{
+	case EMovementState::Walk:
+	{
+		break;
+	}
+	case EMovementState::Crouch:
+	{
+		break;
+	}
+	case EMovementState::Vault:
+	{
+		break;
+	}
+	case EMovementState::RopeClimb:
+	{
+		break;
+	}
+	}*/
 }
 
 void AVincentBloodberry::MoveForward(float Scale)
 {
-	if (Scale != 0.0f && CurrentMovementCharacteristics.bCanMove)
+	if (Scale != 0.0f && bCanMove)
 	{
 		AddMovementInput(GetActorForwardVector(), Scale);
 	}
@@ -192,7 +250,7 @@ void AVincentBloodberry::MoveRight(float Scale)
 {
 	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
-	if (Scale != 0.0f && CurrentMovementCharacteristics.bCanMove)
+	if (Scale != 0.0f && bCanMove)
 	{
 		AddMovementInput(GetActorRightVector(), Scale);
 	}
@@ -202,29 +260,59 @@ void AVincentBloodberry::MoveRight(float Scale)
 
 void AVincentBloodberry::OnLeaning(float Scale)
 {
-	if (CurrentMovementCharacteristics.bCanLean)
-	{
-		const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
-		CurrentCameraLeanY = FMath::FInterpTo(CurrentCameraLeanY, LeanDistance * Scale, DeltaTime, LeanSpeed);
-		CurrentCameraLeanRoll = FMath::FInterpTo(CurrentCameraLeanRoll, LeanAngle * Scale, DeltaTime, LeanSpeed);
+	if (!bCanLean)
+	{
+		return;
 	}
+
+	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
+
+	CurrentCameraLeanY = FMath::FInterpTo(CurrentCameraLeanY, LeanDistance * Scale, DeltaTime, LeanSpeed);
+	CurrentCameraLeanRoll = FMath::FInterpTo(CurrentCameraLeanRoll, LeanAngle * Scale, DeltaTime, LeanSpeed);
 }
 
 void AVincentBloodberry::StartRunning()
 {
-	if (CurrentMovementCharacteristics.bCanMove)
+	if (!bCanMove)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = CurrentMovementCharacteristics.FastMoveSpeed;
+		return;
 	}
+
+	bIsRunning = true;
+	GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[CurrentMovementState].FastMoveSpeed;
 }
 
 void AVincentBloodberry::StopRunning()
 {
-	if (CurrentMovementCharacteristics.bCanMove)
+	if (!bCanMove)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = CurrentMovementCharacteristics.MoveSpeed;
+		return;
 	}
+
+	bIsRunning = false;
+	GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[CurrentMovementState].MoveSpeed;
+}
+
+void AVincentBloodberry::ToggleCrouch()
+{
+	if (!bCanCrouch)
+	{
+		return;
+	}
+
+	if (!bIsCrouching)
+	{
+		UpdateMovementCharacteristics(EMovementState::Crouch);
+		CrouchTAnim.Play();
+	}
+	else
+	{
+		UpdateMovementCharacteristics(EMovementState::Walk);
+		CrouchTAnim.Reverse();
+	}
+
+	bIsCrouching = !bIsCrouching;
 }
 
 void AVincentBloodberry::HeadBobTAnimProgress()
@@ -243,35 +331,44 @@ void AVincentBloodberry::MakeFootstep()
 	}
 }
 
+void AVincentBloodberry::CrouchTAnimProgress()
+{
+	const float TimelineValue = CrouchTAnim.GetPlaybackPosition();
+	const float TimelineFloat = CrouchCurve->GetFloatValue(TimelineValue);
+	const float NewHalfHeight = FMath::Lerp(91.f, 50.5f, TimelineFloat);
+
+	GetCapsuleComponent()->SetCapsuleHalfHeight(NewHalfHeight);
+}
+
 void AVincentBloodberry::InitMovementCharacteristics()
 {
-	FMovementCharacteristics MovementWalking;
+	FMovementCharacteristics MovementWalking{};
 	MovementWalking.MoveSpeed = 111.f;
 	MovementWalking.FastMoveSpeed = 208.f;
-	MovementWalking.CapsuleHalfHeight = 91.f;
 	MovementWalking.bCanMove = true;
 	MovementWalking.bCanLean = true;
+	MovementWalking.bCanCrouch = true;
 
-	FMovementCharacteristics MovementCrouching;
+	FMovementCharacteristics MovementCrouching{};
 	MovementCrouching.MoveSpeed = 60.f;
-	MovementCrouching.FastMoveSpeed = 100.f;
-	MovementCrouching.CapsuleHalfHeight = 45.f;
+	MovementCrouching.FastMoveSpeed = 120.f;
 	MovementCrouching.bCanMove = true;
 	MovementCrouching.bCanLean = true;
+	MovementCrouching.bCanCrouch = true;
 
-	FMovementCharacteristics MovementVaulting;
-	MovementCrouching.MoveSpeed = 0.f;
-	MovementCrouching.FastMoveSpeed = 0.f;
-	MovementCrouching.CapsuleHalfHeight = 45.f;
-	MovementCrouching.bCanMove = false;
-	MovementCrouching.bCanLean = false;
+	FMovementCharacteristics MovementVaulting{};
+	MovementVaulting.MoveSpeed = 0.f;
+	MovementVaulting.FastMoveSpeed = 0.f;
+	MovementVaulting.bCanMove = false;
+	MovementVaulting.bCanLean = false;
+	MovementVaulting.bCanCrouch = false;
 
-	FMovementCharacteristics MovementRopeClimbing;
+	FMovementCharacteristics MovementRopeClimbing{};
 	MovementRopeClimbing.MoveSpeed = 0.f;
 	MovementRopeClimbing.FastMoveSpeed = 0.f;
-	MovementRopeClimbing.CapsuleHalfHeight = 91.f;
 	MovementRopeClimbing.bCanMove = false;
 	MovementRopeClimbing.bCanLean = false;
+	MovementRopeClimbing.bCanCrouch = false;
 
 	MovementDataMap.Add(EMovementState::Walk, MovementWalking);
 	MovementDataMap.Add(EMovementState::Crouch, MovementCrouching);
