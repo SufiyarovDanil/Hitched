@@ -60,7 +60,7 @@ AVincentBloodberry::AVincentBloodberry()
 
 	// Sound base init
 	static ConstructorHelpers::FObjectFinder<USoundCue> SoundCueAsset(
-		TEXT("SoundCue'/Game/Vincent/SFX/FootstepCue.FootstepCue'"));
+		TEXT("SoundCue'/Game/Vincent/SFX/Footstep/FootstepQue.FootstepQue'"));
 
 	if (SoundCueAsset.Succeeded())
 	{
