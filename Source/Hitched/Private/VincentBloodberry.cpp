@@ -5,9 +5,9 @@
 
 
 #include "VincentBloodberry.h"
-#include "LightGem.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "LightGemComponent.h"
 #include "Curves/CurveVector.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -42,12 +42,18 @@ AVincentBloodberry::AVincentBloodberry()
 	Camera->SetFieldOfView(100.f);
 	Camera->bUsePawnControlRotation = true;
 
-	// Set light detector
-	LightGem = CreateDefaultSubobject<UChildActorComponent>(TEXT("Light Gem"));
+	//Set light detector
+	//LightGem = CreateDefaultSubobject<UChildActorComponent>(TEXT("Light Gem"));
+	//LightGem->SetupAttachment(GetCapsuleComponent());
+	//LightGem->SetChildActorClass(ALightGem::StaticClass());
+	//LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
+	//LightGem->SetUsingAbsoluteRotation(true); // When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
+
+	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
 	LightGem->SetupAttachment(GetCapsuleComponent());
-	LightGem->SetChildActorClass(ALightGem::StaticClass());
 	LightGem->SetRelativeLocation(CameraCollisionDefaultLocation);
-	LightGem->SetUsingAbsoluteRotation(true); // When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
+	// When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
+	LightGem->SetUsingAbsoluteRotation(true);
 
 	// Head bob curve init
 	static ConstructorHelpers::FObjectFinder<UCurveVector> HeadBobCurveAsset(

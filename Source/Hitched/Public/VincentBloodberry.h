@@ -14,6 +14,7 @@
 
 class UCameraComponent;
 class USphereComponent;
+class ULightGemComponent;
 class UCurveVector;
 class UCurveFloat;
 class USoundCue;
@@ -71,7 +72,7 @@ public:
 
 	/* For LightGem debugging */
 	UFUNCTION(BlueprintCallable)
-	UChildActorComponent* GetChildComp() const { return LightGem; }
+	ULightGemComponent* GetChildComp() const { return LightGem; }
 
 protected:
 
@@ -83,9 +84,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* CameraCollision = nullptr;
 
-	/* Character's actor component that contains light detector called [Light Gem] */
+	/* Character's scene component that contains light detector called [Light Gem] */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UChildActorComponent* LightGem = nullptr;
+	ULightGemComponent* LightGem = nullptr;
 
 private:
 
@@ -204,6 +205,7 @@ private:
 #pragma endregion
 
 #pragma region CROUCH
+
 	/*  */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Crouch")
 	FTimeline CrouchTAnim;
