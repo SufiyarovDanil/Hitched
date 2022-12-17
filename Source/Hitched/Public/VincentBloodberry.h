@@ -111,7 +111,7 @@ private:
 	void HandleHeadBob(float DeltaTime);
 
 	/* Changes camera transforms every frame, considering tilt, lean etc */
-	void HandleCameraTransforms();
+	void HandleCameraTransforms(float DeltaTime);
 
 	/* Updates movement characteristics when */
 	void UpdateMovementCharacteristics(EMovementState NewMovementState);
@@ -132,7 +132,14 @@ private:
 	/* Stopping to sprint when sprint button is released */
 	void StopRunning();
 
+	/* Toggling MovementMod between Crouch and Walk */
 	void ToggleCrouch();
+
+	/* Calling when character start crouch */
+	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	/* Calling when character start uncrouch */
+	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
 	/* Starting/stopping to lean when lean buttons are pressed/released
 	*  @param Scale the value passed in by the Input Component
@@ -147,15 +154,11 @@ private:
 	UFUNCTION()
 	void MakeFootstep();
 
-	/* Ticks the set movemode to crouch timeline */
-	UFUNCTION()
-	void CrouchTAnimProgress();
-
 #pragma endregion
 
 	/* Default Camera collision's location */
 	UPROPERTY(VisibleAnywhere, Category = "Components | Camera Collision")
-	FVector CameraCollisionDefaultLocation;
+	FVector CameraCollisionWalkLocation;
 
 	/* Default Camera collision's location */
 	UPROPERTY(VisibleAnywhere, Category = "Components | Camera Collision")
@@ -206,13 +209,20 @@ private:
 
 #pragma region CROUCH
 
-	/*  */
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Crouch")
-	FTimeline CrouchTAnim;
+	/* */
+	UPROPERTY()
+	float CrouchCapsuleHalfHeight;
 
-	/*  */
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Crouch")
-	UCurveFloat* CrouchCurve = nullptr;
+	/* */
+	UPROPERTY()
+	float CapsuleHalfHeight;
+
+	UPROPERTY()
+	FVector CameraCollisionCrouchLocation;
+
+	/* */
+	UPROPERTY()
+	float CrouchSpeed;
 
 #pragma endregion
 
