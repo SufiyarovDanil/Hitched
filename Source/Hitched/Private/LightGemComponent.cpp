@@ -1,4 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+@Copyright Based Development.
+2022, 2023 Unpublished Work.
+*/
 
 
 #include "LightGemComponent.h"

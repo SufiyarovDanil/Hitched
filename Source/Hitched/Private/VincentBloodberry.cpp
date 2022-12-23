@@ -8,28 +8,35 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "LightGemComponent.h"
+#include "LandingCameraShake.h"
 #include "Curves/CurveVector.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraShake.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "VincentMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values
-AVincentBloodberry::AVincentBloodberry()
+AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UVincentMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Init movement properties
+	MovementPtr = Cast<UVincentMovementComponent>(ACharacter::GetMovementComponent());
 	InitMovementCharacteristics();
 	CurrentMovementState = EMovementState::Walk;
 
+	// Divided Vincent's height by 2 (182 / 2)
 	CapsuleHalfHeight = 91.f;
-	CrouchCapsuleHalfHeight = 50.f;
+	CrouchCapsuleHalfHeight = MovementPtr->CrouchedHalfHeight;
 	CrouchSpeed = 10.f;
 
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(45.5f, CapsuleHalfHeight); // Radius and half heigh, so we need to divide Vincent's height by 2 (182 / 2)
+	GetCapsuleComponent()->InitCapsuleSize(45.5f, CapsuleHalfHeight);
 
 	// Set head parameters
 	const float CameraCollisionRadius = 30.f;
@@ -51,6 +58,7 @@ AVincentBloodberry::AVincentBloodberry()
 	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
 	LightGem->SetupAttachment(GetCapsuleComponent());
 	LightGem->SetRelativeLocation(CameraCollisionWalkLocation);
+
 	// When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
 	LightGem->SetUsingAbsoluteRotation(true);
 
@@ -72,26 +80,7 @@ AVincentBloodberry::AVincentBloodberry()
 		FootStepSound = SoundCueAsset.Object;
 	}
 
-	// Movement settings
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
-	GetCharacterMovement()->AirControl = 0.f;
-	GetCharacterMovement()->CrouchedHalfHeight = CrouchCapsuleHalfHeight;
-	GetCharacterMovement()->SetWalkableFloorAngle(60);
-
-	// Movement Nav properties
-	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
-	GetCharacterMovement()->NavAgentProps.bCanFly = false;
-	GetCharacterMovement()->NavAgentProps.bCanJump = true;
-	GetCharacterMovement()->NavAgentProps.bCanWalk = true;
-	GetCharacterMovement()->NavAgentProps.bCanSwim = false;
-
-	// Inertia params
-	GetCharacterMovement()->MaxAcceleration = 1024.f;
-	GetCharacterMovement()->BrakingFrictionFactor = 0.f;
-	GetCharacterMovement()->GroundFriction = 4.f;
-	GetCharacterMovement()->BrakingDecelerationWalking = 512.f;
-
-	GetCharacterMovement()->PerchRadiusThreshold = 20.f;
+	LandingCamShake = ULandingCameraShake::StaticClass();
 }
 
 
@@ -211,8 +200,16 @@ void AVincentBloodberry::UpdateMovementCharacteristics(EMovementState NewMovemen
 
 	CurrentMovementState = NewMovementState;
 
-	GetCharacterMovement()->MaxWalkSpeed = (bIsRunning) ?
-		MovementDataMap[CurrentMovementState].FastMoveSpeed : MovementDataMap[CurrentMovementState].MoveSpeed;
+	if (bIsRunning)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[CurrentMovementState].FastMoveSpeed;
+		GetCharacterMovement()->MaxWalkSpeedCrouched = 120.f;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[CurrentMovementState].MoveSpeed;
+		GetCharacterMovement()->MaxWalkSpeedCrouched = 80.f;
+	}
 
 	bCanMove = MovementDataMap[CurrentMovementState].bCanMove;
 	bCanLean = MovementDataMap[CurrentMovementState].bCanLean;
@@ -265,7 +262,7 @@ void AVincentBloodberry::StartRunning()
 	}
 
 	bIsRunning = true;
-	GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[CurrentMovementState].FastMoveSpeed;
+	UpdateMovementCharacteristics(CurrentMovementState);
 }
 
 
@@ -277,13 +274,13 @@ void AVincentBloodberry::StopRunning()
 	}
 
 	bIsRunning = false;
-	GetCharacterMovement()->MaxWalkSpeed = MovementDataMap[CurrentMovementState].MoveSpeed;
+	UpdateMovementCharacteristics(CurrentMovementState);
 }
 
 
 void AVincentBloodberry::ToggleCrouch()
 {
-	if (!bCanCrouch)
+	if (!bCanCrouch || GetCharacterMovement()->IsFalling())
 	{
 		return;
 	}
@@ -299,18 +296,68 @@ void AVincentBloodberry::ToggleCrouch()
 }
 
 
+void AVincentBloodberry::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	if (LandingCamShake)
+	{
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(LandingCamShake);
+	}
+}
+
+
+/**
+* Original imlpementation of this function won't let
+* using jump when character is crouching.
+* I erased several rows for correct work. 
+*/
+bool AVincentBloodberry::CanJumpInternal_Implementation() const
+{
+	// Ensure that the CharacterMovement state is valid
+	bool bCanJump = GetCharacterMovement()->CanAttemptJump();
+
+	if (bCanJump)
+	{
+		// Ensure JumpHoldTime and JumpCount are valid.
+		if (!bWasJumping || GetJumpMaxHoldTime() <= 0.0f)
+		{
+			if (JumpCurrentCount == 0 && GetCharacterMovement()->IsFalling())
+			{
+				bCanJump = JumpCurrentCount + 1 < JumpMaxCount;
+			}
+			else
+			{
+				bCanJump = JumpCurrentCount < JumpMaxCount;
+			}
+		}
+		else
+		{
+			// Only consider JumpKeyHoldTime as long as:
+			// A) The jump limit hasn't been met OR
+			// B) The jump limit has been met AND we were already jumping
+			const bool bJumpKeyHeld = (bPressedJump && JumpKeyHoldTime < GetJumpMaxHoldTime());
+			bCanJump = bJumpKeyHeld &&
+				((JumpCurrentCount < JumpMaxCount) || (bWasJumping && JumpCurrentCount == JumpMaxCount));
+		}
+	}
+
+	return bCanJump;
+}
+
+
 void AVincentBloodberry::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
 	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
 
 	UpdateMovementCharacteristics(EMovementState::Crouch);
-	FVector HeadLoc = GetHead()->GetRelativeLocation();
-	const float HeadHeightAdjust = CameraCollisionWalkLocation.Z - HeadLoc.Z;
+	FVector NewHeadLoc = GetHead()->GetRelativeLocation();
+	const float HeadHeightAdjust = CameraCollisionWalkLocation.Z - NewHeadLoc.Z;
 	
-	HeadLoc.Z = CameraCollisionWalkLocation.Z + (CameraCollisionWalkLocation.Z - CameraCollisionCrouchLocation.Z) - HeadHeightAdjust;
+	NewHeadLoc.Z = CameraCollisionWalkLocation.Z + (CameraCollisionWalkLocation.Z - CameraCollisionCrouchLocation.Z) - HeadHeightAdjust;
 
 	GetHead()->SetRelativeLocation(FVector(0.f)); // COSTYL
-	GetHead()->SetRelativeLocation(HeadLoc);
+	GetHead()->SetRelativeLocation(NewHeadLoc);
 }
 
 
@@ -319,13 +366,13 @@ void AVincentBloodberry::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHei
 	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
 
 	UpdateMovementCharacteristics(EMovementState::Walk);
-	FVector HeadLoc = GetHead()->GetRelativeLocation();
-	const float HeadHeightAdjust = CameraCollisionCrouchLocation.Z - HeadLoc.Z;
+	FVector NewHeadLoc = GetHead()->GetRelativeLocation();
+	const float HeadHeightAdjust = CameraCollisionCrouchLocation.Z - NewHeadLoc.Z;
 
-	HeadLoc.Z = CameraCollisionCrouchLocation.Z - (CameraCollisionWalkLocation.Z - CameraCollisionCrouchLocation.Z) - HeadHeightAdjust;
+	NewHeadLoc.Z = CameraCollisionCrouchLocation.Z - (CameraCollisionWalkLocation.Z - CameraCollisionCrouchLocation.Z) - HeadHeightAdjust;
 
 	GetHead()->SetRelativeLocation(FVector(0.f)); // COSTYL
-	GetHead()->SetRelativeLocation(HeadLoc);
+	GetHead()->SetRelativeLocation(NewHeadLoc);
 }
 
 

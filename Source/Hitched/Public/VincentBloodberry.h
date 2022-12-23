@@ -13,8 +13,10 @@
 
 
 class UCameraComponent;
+class UMatineeCameraShake;
 class USphereComponent;
 class ULightGemComponent;
+class UVincentMovementComponent;
 class UCurveVector;
 class UCurveFloat;
 class USoundCue;
@@ -34,7 +36,7 @@ enum class EMovementState : uint8
 USTRUCT()
 struct FMovementCharacteristics
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(VisibleAnywhere, Category = "Movement Characteristics")
 	float MoveSpeed;
@@ -88,12 +90,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	ULightGemComponent* LightGem = nullptr;
 
+	/* Characters's modified movement component */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UVincentMovementComponent* MovementPtr = nullptr;
+
 private:
 
 #pragma region FUNCTIONS
 
 	/* Sets default values for this character's properties */
-	AVincentBloodberry();
+	AVincentBloodberry(const FObjectInitializer& ObjectInitializer);
 
 	/* Initializes movement characteristics for each movement state */
 	void InitMovementCharacteristics();
@@ -134,6 +140,12 @@ private:
 
 	/* Toggling MovementMod between Crouch and Walk */
 	void ToggleCrouch();
+
+	/* overrided function of ACharacter class */
+	virtual bool CanJumpInternal_Implementation() const override;
+
+	/* Overrided function of ACharacter class */
+	virtual void Landed(const FHitResult& Hit) override;
 
 	/* Calling when character start crouch */
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
@@ -247,6 +259,13 @@ private:
 	/* the speed of leaning */
 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
 	float LeanSpeed = 5.f;
+
+#pragma endregion
+
+#pragma region LANDING
+
+	UPROPERTY()
+	TSubclassOf<UMatineeCameraShake> LandingCamShake = nullptr;
 
 #pragma endregion
 

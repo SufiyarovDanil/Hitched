@@ -1,4 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+@Copyright Based Development.
+2022, 2023 Unpublished Work.
+*/
 
 #pragma once
 
@@ -16,6 +19,7 @@ class HITCHED_API ULightGemComponent : public USceneComponent
 
 public:
 
+	UFUNCTION()
 	float GetBrightness() const { return BrightnessOutput; }
 
 	UFUNCTION(BlueprintCallable)
@@ -23,13 +27,13 @@ public:
 
 protected:
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Ligt Receiver")
 	UStaticMeshComponent* Octahedron = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Top Light Catcher")
 	USceneCaptureComponent2D* SceneCaptureTop = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Bottom Light Catcher")
 	USceneCaptureComponent2D* SceneCaptureBottom = nullptr;
 
 private:
@@ -52,20 +56,20 @@ private:
 
 #pragma region VARIABLES
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Top Snapshot")
 	UTextureRenderTarget2D* RenderTargetTop = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Bottom Snapshot")
 	UTextureRenderTarget2D* RenderTargetBottom = nullptr;
 
 	FRenderCommandFence CaptureFenceTop;
 
 	FRenderCommandFence CaptureFenceBottom;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Tick Interval")
 	float LightUpdateInterval;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Light Level Output")
 	float BrightnessOutput;
 
 #pragma endregion
