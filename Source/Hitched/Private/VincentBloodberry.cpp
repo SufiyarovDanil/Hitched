@@ -15,6 +15,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "VincentMovementComponent.h"
+#include "VincentVaultingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
@@ -26,13 +27,16 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Init movement properties
-	MovementPtr = Cast<UVincentMovementComponent>(ACharacter::GetMovementComponent());
+	MovementComp = Cast<UVincentMovementComponent>(ACharacter::GetMovementComponent());
 	InitMovementCharacteristics();
 	CurrentMovementState = EMovementState::Walk;
 
+	// Init vaulting component
+	VaultingComp = CreateDefaultSubobject<UVincentVaultingComponent>(TEXT("Vaulting"));
+
 	// Divided Vincent's height by 2 (182 / 2)
 	CapsuleHalfHeight = 91.f;
-	CrouchCapsuleHalfHeight = MovementPtr->CrouchedHalfHeight;
+	CrouchCapsuleHalfHeight = MovementComp->CrouchedHalfHeight;
 	CrouchSpeed = 10.f;
 
 	// Set size for collision capsule
@@ -106,8 +110,7 @@ void AVincentBloodberry::BeginPlay()
 
 	if (MovementDataMap.Contains(EMovementState::Walk))
 	{
-		CurrentMovementState = EMovementState::Walk;
-		UpdateMovementCharacteristics(CurrentMovementState);
+		UpdateMovementCharacteristics(EMovementState::Walk);
 	}
 }
 
@@ -308,8 +311,8 @@ void AVincentBloodberry::Landed(const FHitResult& Hit)
 
 
 /**
-* Original imlpementation of this function won't let
-* using jump when character is crouching.
+* Original implementation of this function won't let
+* us using jump when character is crouching.
 * I erased several rows for correct work. 
 */
 bool AVincentBloodberry::CanJumpInternal_Implementation() const
@@ -373,6 +376,22 @@ void AVincentBloodberry::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHei
 
 	GetHead()->SetRelativeLocation(FVector(0.f)); // COSTYL
 	GetHead()->SetRelativeLocation(NewHeadLoc);
+}
+
+
+void AVincentBloodberry::Jump()
+{
+	if (VaultingComp)
+	{
+		if (VaultingComp->CanVault())
+		{
+			 VaultingComp->Vault();
+			
+			 return;
+		}
+	}
+
+	Super::Jump();
 }
 
 

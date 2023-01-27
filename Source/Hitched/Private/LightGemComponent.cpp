@@ -71,7 +71,6 @@ void ULightGemComponent::BeginPlay()
 	RenderTargetTop->InitCustomFormat(LIGHTGEM_TEX_WIDTH, LIGHTGEM_TEX_HEIGHT, EPixelFormat::PF_FloatRGB, false);
 	SceneCaptureTop->TextureTarget = RenderTargetTop;
 
-
 	RenderTargetBottom = NewObject<UTextureRenderTarget2D>();
 	RenderTargetBottom->InitCustomFormat(LIGHTGEM_TEX_WIDTH, LIGHTGEM_TEX_HEIGHT, EPixelFormat::PF_FloatRGB, false);
 	SceneCaptureBottom->TextureTarget = RenderTargetBottom;
@@ -84,13 +83,16 @@ void ULightGemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	ComputeBrightness();
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Light level: %f"), BrightnessOutput));
+	}
 }
 
 
 void ULightGemComponent::ComputeBrightness()
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, LightUpdateInterval, FColor::Yellow, FString::Printf(TEXT("%f"), BrightnessOutput));
-
 	if (!RenderTargetTop || !RenderTargetBottom)
 	{
 		BrightnessOutput = 0.f;
@@ -109,11 +111,6 @@ void ULightGemComponent::ComputeBrightness()
 
 		SceneCaptureBottom->CaptureSceneDeferred();
 		CaptureFenceBottom.BeginFence();
-	}
-	else
-	{
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, LightUpdateInterval, FColor::Emerald, FString::Printf(TEXT("all scene captures is not ready yet")));
 	}
 }
 

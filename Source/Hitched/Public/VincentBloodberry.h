@@ -17,6 +17,7 @@ class UMatineeCameraShake;
 class USphereComponent;
 class ULightGemComponent;
 class UVincentMovementComponent;
+class UVincentVaultingComponent;
 class UCurveVector;
 class UCurveFloat;
 class USoundCue;
@@ -92,7 +93,11 @@ protected:
 
 	/* Characters's modified movement component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UVincentMovementComponent* MovementPtr = nullptr;
+	UVincentMovementComponent* MovementComp = nullptr;
+
+	/* Character's vaulting component */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UVincentVaultingComponent* VaultingComp = nullptr;
 
 private:
 
@@ -152,6 +157,9 @@ private:
 
 	/* Calling when character start uncrouch */
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	/* Calling when character start Jumping */
+	virtual void Jump() override;
 
 	/* Starting/stopping to lean when lean buttons are pressed/released
 	*  @param Scale the value passed in by the Input Component
@@ -221,14 +229,15 @@ private:
 
 #pragma region CROUCH
 
-	/* */
+	/* Character's Capsule half height when is in crouch movement state */
 	UPROPERTY()
 	float CrouchCapsuleHalfHeight;
 
-	/* */
+	/* Character's Capsule half height when is walking */
 	UPROPERTY()
 	float CapsuleHalfHeight;
 
+	/* Target Location for Head interp */
 	UPROPERTY()
 	FVector CameraCollisionCrouchLocation;
 
@@ -264,26 +273,24 @@ private:
 
 #pragma region LANDING
 
-	UPROPERTY()
+	/* Camera Shake that gives effective impact when character landing on any floor */
+	UPROPERTY(VisibleAnywhere, Category = "Landing")
 	TSubclassOf<UMatineeCameraShake> LandingCamShake = nullptr;
 
 #pragma endregion
 
 #pragma region MOVEMENT_VALUES
-	// not implemented
-	UPROPERTY()
-	bool bIsCrouching = false;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Movement Value")
 	bool bIsRunning = false;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Movement Value")
 	bool bCanMove = false;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Movement Value")
 	bool bCanLean = false;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Movement Value")
 	bool bCanCrouch = false;
 
 #pragma endregion
