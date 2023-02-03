@@ -18,6 +18,7 @@ class USphereComponent;
 class ULightGemComponent;
 class UVincentMovementComponent;
 class UVincentVaultingComponent;
+class UVincentLeaningComponent;
 class UCurveVector;
 class UCurveFloat;
 class USoundCue;
@@ -28,8 +29,6 @@ enum class EMovementState : uint8
 {
 	Walk		UMETA(DisplayName = "Walking"),
 	Crouch		UMETA(DisplayName = "Crouching"),
-	Vault		UMETA(DisplayName = "Vaulting"),
-	RopeClimb	UMETA(DisplayName = "Rope Climbing")
 };
 
 
@@ -71,7 +70,7 @@ public:
 
 	/* Returns a reference to character's head */
 	UFUNCTION()
-	USphereComponent* GetHead() const { return CameraCollision; }
+	UVincentLeaningComponent* GetHead() const { return LeaningComp; }
 
 	/* For LightGem debugging */
 	UFUNCTION(BlueprintCallable)
@@ -98,6 +97,10 @@ protected:
 	/* Character's vaulting component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UVincentVaultingComponent* VaultingComp = nullptr;
+
+	/* Character's leaning component */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UVincentLeaningComponent* LeaningComp = nullptr;
 
 private:
 
@@ -195,21 +198,23 @@ private:
 
 #pragma endregion
 
-#pragma region TILT
 
-	/* The angle at which the camera tilt roll is currently located. Changes every frame */
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-	float CurrentCameraTiltRoll = 0.f;
+// #pragma region TILT
 
-	/* The angle which camera have roll when character is stafing to left/right */
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-	float CameraTiltAngle = 0.5f;
+// 	/* The angle at which the camera tilt roll is currently located. Changes every frame */
+// 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
+// 	float CurrentCameraTiltRoll = 0.f;
 
-	/* The speed of camera tilting */
-	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-	float CameraTiltSpeed = 5.f;
+// 	/* The angle which camera have roll when character is stafing to left/right */
+// 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
+// 	float CameraTiltAngle = 0.5f;
 
-#pragma endregion
+// 	/* The speed of camera tilting */
+// 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
+// 	float CameraTiltSpeed = 5.f;
+
+// #pragma endregion
+
 
 #pragma region HEAD_BOB
 
@@ -247,29 +252,29 @@ private:
 
 #pragma endregion
 
-#pragma region LEAN
+// #pragma region LEAN
 
-	/* Current head collision's Y location. Changes every frame */
-	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-	float CurrentCameraLeanY = 0.f;
+// 	/* Current head collision's Y location. Changes every frame */
+// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
+// 	float CurrentCameraLeanY = 0.f;
 
-	/* The angle at which the camera lean roll is currently located. Changes every frame */
-	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-	float CurrentCameraLeanRoll = 0.f;
+// 	/* The angle at which the camera lean roll is currently located. Changes every frame */
+// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
+// 	float CurrentCameraLeanRoll = 0.f;
 
-	/* The distance how far head can move from head origin position */
-	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-	float LeanDistance = 100.f;
+// 	/* The distance how far head can move from head origin position */
+// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
+// 	float LeanDistance = 100.f;
 
-	/* Angle to which the camera should roll while leaning */
-	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-	float LeanAngle = 5.f;
+// 	/* Angle to which the camera should roll while leaning */
+// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
+// 	float LeanAngle = 5.f;
 
-	/* the speed of leaning */
-	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-	float LeanSpeed = 5.f;
+// 	/* the speed of leaning */
+// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
+// 	float LeanSpeed = 5.f;
 
-#pragma endregion
+// #pragma endregion
 
 #pragma region LANDING
 

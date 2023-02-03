@@ -4,7 +4,7 @@
 */
 
 
-#include "LightGemComponent.h"
+#include "Vincent/LightGemComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 

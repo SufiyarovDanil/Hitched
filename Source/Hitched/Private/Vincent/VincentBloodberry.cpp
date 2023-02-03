@@ -4,18 +4,19 @@
 */
 
 
-#include "VincentBloodberry.h"
+#include "Vincent/VincentBloodberry.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
-#include "LightGemComponent.h"
-#include "LandingCameraShake.h"
+#include "Vincent/LightGemComponent.h"
+#include "Vincent/LandingCameraShake.h"
 #include "Curves/CurveVector.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/CameraShake.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
-#include "VincentMovementComponent.h"
-#include "VincentVaultingComponent.h"
+#include "Vincent/VincentMovementComponent.h"
+#include "Vincent/VincentVaultingComponent.h"
+#include "Vincent/VincentLeaningComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
@@ -48,9 +49,14 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	CameraCollisionCrouchLocation = FVector(0.f, 0.f, CrouchCapsuleHalfHeight - CameraCollisionRadius);
 	CameraCollisionDefaulRotation = FRotator(0.f, 0.f, 0.f);
 
+	// Init leaning component
+	LeaningComp = CreateDefaultSubobject<UVincentLeaningComponent>(TEXT("Leaning"));
+	LeaningComp->SetupAttachment(GetCapsuleComponent());
+	LeaningComp->SetRelativeLocation(CameraCollisionWalkLocation);
+
 	CameraCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Head"));
-	CameraCollision->SetupAttachment(GetCapsuleComponent());
-	CameraCollision->SetRelativeLocation(CameraCollisionWalkLocation);
+	CameraCollision->SetupAttachment(LeaningComp);
+	//CameraCollision->SetRelativeLocation(CameraCollisionWalkLocation);
 	CameraCollision->SetSphereRadius(CameraCollisionRadius);
 
 	// Set camera parameters
@@ -179,18 +185,21 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime)
 
 void AVincentBloodberry::HandleCameraTransforms(float DeltaTime)
 {
-	const FRotator CurrentControlRotation = GetController()->GetControlRotation();
-	const float CalculatedCameraRoll = CurrentCameraTiltRoll + CurrentCameraLeanRoll;
-	const FRotator CalculatedCameraRotation(CurrentControlRotation.Pitch, CurrentControlRotation.Yaw, CalculatedCameraRoll);
+	// Calculating head lean
+	//const FRotator CurrentControlRotation = GetController()->GetControlRotation();
+	//const float CalculatedCameraLeanRoll =  CurrentControlRotation.Roll - CurrentCameraLeanRoll;
+	//const FRotator CalculatedCameraRotation(CurrentControlRotation.Pitch, CurrentControlRotation.Yaw, CalculatedCameraLeanRoll);
 
 	const FVector CurrentCameraCollLocation = GetHead()->GetRelativeLocation();
 	const float CameraCollLocationHeightTarget = (GetCharacterMovement()->IsCrouching()) ?
 		CameraCollisionCrouchLocation.Z : CameraCollisionWalkLocation.Z;
 	const float InterpCameraCollHeight = FMath::FInterpTo(CurrentCameraCollLocation.Z, CameraCollLocationHeightTarget, DeltaTime, CrouchSpeed);
-	const FVector CalculatedCameraCollLocation(CurrentCameraCollLocation.X, CurrentCameraLeanY, InterpCameraCollHeight);
+	//const FVector CalculatedCameraCollLocation(CurrentCameraCollLocation.X, CurrentCameraLeanY, InterpCameraCollHeight);
+	const FVector CalculatedCameraCollLocation(CurrentCameraCollLocation.X, CurrentCameraCollLocation.Y, InterpCameraCollHeight);
 
 	GetHead()->SetRelativeLocation(CalculatedCameraCollLocation);
-	GetController()->SetControlRotation(CalculatedCameraRotation);
+	//LeaningComp->SetRelativeLocation(CalculatedCameraCollLocation);
+	//GetController()->SetControlRotation(CalculatedCameraRotation);
 }
 
 
@@ -222,7 +231,7 @@ void AVincentBloodberry::UpdateMovementCharacteristics(EMovementState NewMovemen
 
 void AVincentBloodberry::MoveForward(float Scale)
 {
-	if (Scale != 0.0f && bCanMove)
+	if (Scale != 0.0f && bCanMove && !VaultingComp->IsVaulting())
 	{
 		AddMovementInput(GetActorForwardVector(), Scale);
 	}
@@ -233,18 +242,17 @@ void AVincentBloodberry::MoveRight(float Scale)
 {
 	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
-	if (Scale != 0.0f && bCanMove)
+	if (Scale != 0.0f && bCanMove && !VaultingComp->IsVaulting())
 	{
 		AddMovementInput(GetActorRightVector(), Scale);
 	}
 
-	CurrentCameraTiltRoll = FMath::FInterpTo(CurrentCameraTiltRoll, CameraTiltAngle * Scale, DeltaTime, CameraTiltSpeed);
+	//CurrentCameraTiltRoll = FMath::FInterpTo(CurrentCameraTiltRoll, CameraTiltAngle * Scale, DeltaTime, CameraTiltSpeed);
 }
 
 
 void AVincentBloodberry::OnLeaning(float Scale)
 {
-
 	if (!bCanLean)
 	{
 		return;
@@ -252,8 +260,8 @@ void AVincentBloodberry::OnLeaning(float Scale)
 
 	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
-	CurrentCameraLeanY = FMath::FInterpTo(CurrentCameraLeanY, LeanDistance * Scale, DeltaTime, LeanSpeed);
-	CurrentCameraLeanRoll = FMath::FInterpTo(CurrentCameraLeanRoll, LeanAngle * Scale, DeltaTime, LeanSpeed);
+	//CurrentCameraLeanY = FMath::FInterpTo(CurrentCameraLeanY, LeanDistance * Scale, DeltaTime, LeanSpeed);
+	//CurrentCameraLeanRoll = FMath::FInterpTo(CurrentCameraLeanRoll, LeanAngle * Scale, DeltaTime, LeanSpeed);
 }
 
 
@@ -283,7 +291,7 @@ void AVincentBloodberry::StopRunning()
 
 void AVincentBloodberry::ToggleCrouch()
 {
-	if (!bCanCrouch || GetCharacterMovement()->IsFalling())
+	if (!bCanCrouch || GetCharacterMovement()->IsFalling() || VaultingComp->IsVaulting())
 	{
 		return;
 	}
@@ -385,9 +393,9 @@ void AVincentBloodberry::Jump()
 	{
 		if (VaultingComp->CanVault())
 		{
-			 VaultingComp->Vault();
+			VaultingComp->Vault();
 			
-			 return;
+			return;
 		}
 	}
 
@@ -429,22 +437,6 @@ void AVincentBloodberry::InitMovementCharacteristics()
 	MovementCrouching.bCanLean = true;
 	MovementCrouching.bCanCrouch = true;
 
-	FMovementCharacteristics MovementVaulting{};
-	MovementVaulting.MoveSpeed = 0.f;
-	MovementVaulting.FastMoveSpeed = 0.f;
-	MovementVaulting.bCanMove = false;
-	MovementVaulting.bCanLean = false;
-	MovementVaulting.bCanCrouch = false;
-
-	FMovementCharacteristics MovementRopeClimbing{};
-	MovementRopeClimbing.MoveSpeed = 0.f;
-	MovementRopeClimbing.FastMoveSpeed = 0.f;
-	MovementRopeClimbing.bCanMove = false;
-	MovementRopeClimbing.bCanLean = false;
-	MovementRopeClimbing.bCanCrouch = false;
-
 	MovementDataMap.Add(EMovementState::Walk, MovementWalking);
 	MovementDataMap.Add(EMovementState::Crouch, MovementCrouching);
-	MovementDataMap.Add(EMovementState::Vault, MovementVaulting);
-	MovementDataMap.Add(EMovementState::RopeClimb, MovementRopeClimbing);
 }

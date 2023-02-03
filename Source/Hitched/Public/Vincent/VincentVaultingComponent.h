@@ -12,7 +12,6 @@
 
 
 class AVincentBloodberry;
-class UCapsuleComponent;
 struct FHitResult;
 
 /* Sub enum of Vaulting in EMovementState */
@@ -46,20 +45,28 @@ private:
 
 #pragma region VARIABLES
 
+	UPROPERTY(VisibleAnywhere, Category = "Component Owner")
 	AVincentBloodberry* OwningCharacter = nullptr;
 
+	UPROPERTY(VisibleAnywhere, Category = "Vault State")
 	EVaultState VaultState;
 
+	UPROPERTY(VisibleAnywhere, Category = "Vaulting Start Location")
 	FVector EndingLocation;
 
+	UPROPERTY(VisibleAnywhere, Category = "Vaulting End Location")
 	FVector StartingLocation;
 
+	UPROPERTY(VisibleAnywhere, Category = "Min Vaulting Height")
 	float MinVaultingHeight;
 
+	UPROPERTY(VisibleAnywhere, Category = "Max Vaulting Height")
 	float MaxVaultingHeight;
 
+	UPROPERTY(VisibleAnywhere, Category = "Vaulting Progress")
 	float Progress;
 
+	UPROPERTY(VisibleAnywhere, Category = "Vaulting Speed")
 	float VaultSpeed;
 
 #pragma endregion
@@ -69,6 +76,8 @@ private:
 public:
 
 	bool CanVault();
+
+	bool IsVaulting();
 
 	void Vault();
 

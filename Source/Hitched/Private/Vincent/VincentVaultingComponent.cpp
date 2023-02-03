@@ -4,9 +4,9 @@
 */
 
 
-#include "VincentVaultingComponent.h"
+#include "Vincent/VincentVaultingComponent.h"
+#include "Vincent/VincentBloodberry.h"
 #include "DrawDebugHelpers.h"
-#include "VincentBloodberry.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -81,10 +81,8 @@ void UVincentVaultingComponent::TickVault(const float DeltaTime)
 
 bool UVincentVaultingComponent::CanVault()
 {
-	if (VaultState != EVaultState::NotVaulting)
+	if (IsVaulting())
 	{
-		//EndingLocation = FVector(0.f);
-
 		return false;
 	}
 
@@ -116,8 +114,6 @@ bool UVincentVaultingComponent::CanVault()
 
 #endif
 
-		//EndingLocation = FVector(0.f);
-
 		return false;
 	}
 
@@ -129,8 +125,6 @@ bool UVincentVaultingComponent::CanVault()
 
 	if (!CanVaultToHit(HitResult))
 	{
-		//EndingLocation = FVector(0.f);
-
 		return false;
 	}
 
@@ -205,7 +199,7 @@ bool UVincentVaultingComponent::CheckCapsuleCollision(const FVector Center, cons
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(OwningCharacter);
 
-	TArray<AActor* > OutActors;
+	TArray<AActor*> OutActors;
 
 	return UKismetSystemLibrary::CapsuleOverlapActors
 	(
@@ -221,6 +215,12 @@ bool UVincentVaultingComponent::CheckCapsuleCollision(const FVector Center, cons
 }
 
 
+bool UVincentVaultingComponent::IsVaulting()
+{
+	return VaultState == EVaultState::Vaulting;
+}
+
+
 void UVincentVaultingComponent::Vault()
 {
 	Progress = 0.f;
@@ -228,6 +228,4 @@ void UVincentVaultingComponent::Vault()
 	StartingLocation = OwningCharacter->GetActorLocation();
 
 	VaultState = EVaultState::Vaulting;
-
-
 }

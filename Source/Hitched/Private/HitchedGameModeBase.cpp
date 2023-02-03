@@ -5,8 +5,8 @@
 
 
 #include "HitchedGameModeBase.h"
-#include "VincentBloodberry.h"
-#include "VincentHUD.h"
+#include "Vincent/VincentBloodberry.h"
+#include "Vincent/VincentHUD.h"
 
 
 AHitchedGameModeBase::AHitchedGameModeBase()
