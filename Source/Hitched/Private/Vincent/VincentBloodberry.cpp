@@ -17,6 +17,7 @@
 #include "Vincent/VincentMovementComponent.h"
 #include "Vincent/VincentVaultingComponent.h"
 #include "Vincent/VincentLeaningComponent.h"
+#include "Vincent/VincentInteractingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
@@ -34,6 +35,9 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 
 	// Init vaulting component
 	VaultingComp = CreateDefaultSubobject<UVincentVaultingComponent>(TEXT("Vaulting"));
+
+	// Init interacting component
+	InteractingComp = CreateDefaultSubobject<UVincentInteractingComponent>(TEXT("Interacting"));
 
 	// Divided Vincent's height by 2 (182 / 2)
 	CapsuleHalfHeight = 91.f;
@@ -65,6 +69,7 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	Camera->SetFieldOfView(100.f);
 	Camera->bUsePawnControlRotation = true;
 
+	// Init lightgem component
 	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
 	LightGem->SetupAttachment(GetCapsuleComponent());
 	LightGem->SetRelativeLocation(CameraCollisionWalkLocation);
@@ -145,6 +150,7 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindKey(EKeys::C, IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
+	PlayerInputComponent->BindAction("Interact", IE_Released, this, &AVincentBloodberry::Interact);
 
 	PlayerInputComponent->BindAxis("Lean", this, &AVincentBloodberry::OnLeaning);
 
@@ -240,7 +246,7 @@ void AVincentBloodberry::MoveForward(float Scale)
 
 void AVincentBloodberry::MoveRight(float Scale)
 {
-	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	//const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
 	if (Scale != 0.0f && bCanMove && !VaultingComp->IsVaulting())
 	{
@@ -258,7 +264,7 @@ void AVincentBloodberry::OnLeaning(float Scale)
 		return;
 	}
 
-	const float DeltaTime = GetWorld()->DeltaTimeSeconds;
+	//const float DeltaTime = GetWorld()->DeltaTimeSeconds;
 
 	//CurrentCameraLeanY = FMath::FInterpTo(CurrentCameraLeanY, LeanDistance * Scale, DeltaTime, LeanSpeed);
 	//CurrentCameraLeanRoll = FMath::FInterpTo(CurrentCameraLeanRoll, LeanAngle * Scale, DeltaTime, LeanSpeed);
@@ -303,6 +309,15 @@ void AVincentBloodberry::ToggleCrouch()
 	else
 	{
 		UnCrouch();
+	}
+}
+
+
+void AVincentBloodberry::Interact()
+{
+	if (InteractingComp)
+	{
+		InteractingComp->InteractButtonPressed();
 	}
 }
 

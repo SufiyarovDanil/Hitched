@@ -12,7 +12,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 
 
-#define DRAW_DEBUG
+//#define DRAW_DEBUG
 
 // Sets default values for this component's properties
 UVincentVaultingComponent::UVincentVaultingComponent()
@@ -163,10 +163,10 @@ bool UVincentVaultingComponent::CanVaultToHit(const FHitResult& HitResult)
 		return false;
 	}
 
-	if (GEngine)
+	/*if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Emerald, FString::Printf(TEXT("Can vault")));
-	}
+	}*/
 
 	return true;
 }

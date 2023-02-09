@@ -84,10 +84,10 @@ void ULightGemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 	ComputeBrightness();
 
-	if (GEngine)
+	/*if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Light level: %f"), BrightnessOutput));
-	}
+	}*/
 }
 
 

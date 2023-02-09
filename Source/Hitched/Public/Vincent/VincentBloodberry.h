@@ -9,6 +9,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
+//#include "../Interact.h"
 #include "VincentBloodberry.generated.h"
 
 
@@ -19,6 +20,7 @@ class ULightGemComponent;
 class UVincentMovementComponent;
 class UVincentVaultingComponent;
 class UVincentLeaningComponent;
+class UVincentInteractingComponent;
 class UCurveVector;
 class UCurveFloat;
 class USoundCue;
@@ -58,7 +60,7 @@ struct FMovementCharacteristics
  *
  */
 UCLASS()
-class HITCHED_API AVincentBloodberry : public ACharacter
+class HITCHED_API AVincentBloodberry : public ACharacter //, public IInteract
 {
 	GENERATED_BODY()
 
@@ -101,6 +103,20 @@ protected:
 	/* Character's leaning component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UVincentLeaningComponent* LeaningComp = nullptr;
+
+	/* Character's interacting component */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UVincentInteractingComponent* InteractingComp = nullptr;
+
+//public:
+//
+//#pragma region INTERFACE
+//
+//	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
+//	void Interact(AActor* Caller);
+//	virtual void Interact_Implementation(AActor* Caller);
+//
+//#pragma endregion
 
 private:
 
@@ -148,6 +164,9 @@ private:
 
 	/* Toggling MovementMod between Crouch and Walk */
 	void ToggleCrouch();
+
+	/* Interacting with interactable actors */
+	void Interact();
 
 	/* overrided function of ACharacter class */
 	virtual bool CanJumpInternal_Implementation() const override;
