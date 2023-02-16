@@ -17,7 +17,7 @@
 #include "Vincent/VincentMovementComponent.h"
 #include "Vincent/VincentVaultingComponent.h"
 #include "Vincent/VincentLeaningComponent.h"
-#include "Vincent/VincentInteractingComponent.h"
+#include "Vincent/VincentActioningComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
@@ -37,7 +37,7 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	VaultingComp = CreateDefaultSubobject<UVincentVaultingComponent>(TEXT("Vaulting"));
 
 	// Init interacting component
-	InteractingComp = CreateDefaultSubobject<UVincentInteractingComponent>(TEXT("Interacting"));
+	ActioningComp = CreateDefaultSubobject<UVincentActioningComponent>(TEXT("Actioning"));
 
 	// Divided Vincent's height by 2 (182 / 2)
 	CapsuleHalfHeight = 91.f;
@@ -60,7 +60,6 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 
 	CameraCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Head"));
 	CameraCollision->SetupAttachment(LeaningComp);
-	//CameraCollision->SetRelativeLocation(CameraCollisionWalkLocation);
 	CameraCollision->SetSphereRadius(CameraCollisionRadius);
 
 	// Set camera parameters
@@ -71,7 +70,7 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 
 	// Init lightgem component
 	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
-	LightGem->SetupAttachment(GetCapsuleComponent());
+	LightGem->SetupAttachment(CameraCollision);
 	LightGem->SetRelativeLocation(CameraCollisionWalkLocation);
 
 	// When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
@@ -88,7 +87,7 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 
 	// Sound base init
 	static ConstructorHelpers::FObjectFinder<USoundCue> SoundCueAsset(
-		TEXT("SoundCue'/Game/Vincent/SFX/Footstep/FootstepQue.FootstepQue'"));
+		TEXT("SoundCue'/Game/Sounds/Footsteps/Footsteps.Footsteps'"));
 
 	if (SoundCueAsset.Succeeded())
 	{
@@ -150,7 +149,7 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindKey(EKeys::C, IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
-	PlayerInputComponent->BindAction("Interact", IE_Released, this, &AVincentBloodberry::Interact);
+	PlayerInputComponent->BindAction("Interact", IE_Released, this, &AVincentBloodberry::DoAction);
 
 	PlayerInputComponent->BindAxis("Lean", this, &AVincentBloodberry::OnLeaning);
 
@@ -313,11 +312,11 @@ void AVincentBloodberry::ToggleCrouch()
 }
 
 
-void AVincentBloodberry::Interact()
+void AVincentBloodberry::DoAction()
 {
-	if (InteractingComp)
+	if (ActioningComp)
 	{
-		InteractingComp->InteractButtonPressed();
+		ActioningComp->ActionButtonPressed();
 	}
 }
 

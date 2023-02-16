@@ -189,12 +189,20 @@ bool UVincentVaultingComponent::CheckCapsuleCollision(const FVector Center, cons
 
 #endif
 
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery1);	// means WorldStatic
-	ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery2);	// means WorldDynamic
-	ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery6);	// means PhysicsBody
-	ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery7);	// means Vehicle
-	ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery8);	// means Destructible
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes
+	{
+		EObjectTypeQuery::ObjectTypeQuery1,	// means WorldStatic
+		EObjectTypeQuery::ObjectTypeQuery2,	// means WorldDynamic
+		EObjectTypeQuery::ObjectTypeQuery6,	// means PhysicsBody
+		EObjectTypeQuery::ObjectTypeQuery7,	// means Vehicle
+		EObjectTypeQuery::ObjectTypeQuery8	// means Destructible
+	};
+
+	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery1);	// means WorldStatic
+	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery2);	// means WorldDynamic
+	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery6);	// means PhysicsBody
+	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery7);	// means Vehicle
+	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery8);	// means Destructible
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(OwningCharacter);

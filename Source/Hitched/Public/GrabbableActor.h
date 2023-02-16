@@ -3,24 +3,25 @@
 2022, 2023 Unpublished Work.
 */
 
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "ActionableActorBase.h"
-#include "InteractableActor.generated.h"
+#include "GrabbableActor.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class HITCHED_API AInteractableActor : public AActionableActorBase
+class HITCHED_API AGrabbableActor : public AActionableActorBase
 {
 	GENERATED_BODY()
 	
 public:
 
 	// Sets default values for this actor's properties
-	AInteractableActor();
+	AGrabbableActor();
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

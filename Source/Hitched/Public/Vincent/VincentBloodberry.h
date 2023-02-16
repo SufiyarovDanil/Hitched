@@ -9,7 +9,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
-//#include "../Interact.h"
 #include "VincentBloodberry.generated.h"
 
 
@@ -20,7 +19,7 @@ class ULightGemComponent;
 class UVincentMovementComponent;
 class UVincentVaultingComponent;
 class UVincentLeaningComponent;
-class UVincentInteractingComponent;
+class UVincentActioningComponent;
 class UCurveVector;
 class UCurveFloat;
 class USoundCue;
@@ -104,19 +103,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UVincentLeaningComponent* LeaningComp = nullptr;
 
-	/* Character's interacting component */
+	/* Character's actioning component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	UVincentInteractingComponent* InteractingComp = nullptr;
-
-//public:
-//
-//#pragma region INTERFACE
-//
-//	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
-//	void Interact(AActor* Caller);
-//	virtual void Interact_Implementation(AActor* Caller);
-//
-//#pragma endregion
+	UVincentActioningComponent* ActioningComp = nullptr;
 
 private:
 
@@ -166,7 +155,7 @@ private:
 	void ToggleCrouch();
 
 	/* Interacting with interactable actors */
-	void Interact();
+	void DoAction();
 
 	/* overrided function of ACharacter class */
 	virtual bool CanJumpInternal_Implementation() const override;
@@ -217,24 +206,6 @@ private:
 
 #pragma endregion
 
-
-// #pragma region TILT
-
-// 	/* The angle at which the camera tilt roll is currently located. Changes every frame */
-// 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-// 	float CurrentCameraTiltRoll = 0.f;
-
-// 	/* The angle which camera have roll when character is stafing to left/right */
-// 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-// 	float CameraTiltAngle = 0.5f;
-
-// 	/* The speed of camera tilting */
-// 	UPROPERTY(VisibleAnywhere, Category = "Movement | Camera Tilt")
-// 	float CameraTiltSpeed = 5.f;
-
-// #pragma endregion
-
-
 #pragma region HEAD_BOB
 
 	/* Vector curve for smooth head bobbing */
@@ -270,30 +241,6 @@ private:
 	float CrouchSpeed;
 
 #pragma endregion
-
-// #pragma region LEAN
-
-// 	/* Current head collision's Y location. Changes every frame */
-// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-// 	float CurrentCameraLeanY = 0.f;
-
-// 	/* The angle at which the camera lean roll is currently located. Changes every frame */
-// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-// 	float CurrentCameraLeanRoll = 0.f;
-
-// 	/* The distance how far head can move from head origin position */
-// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-// 	float LeanDistance = 100.f;
-
-// 	/* Angle to which the camera should roll while leaning */
-// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-// 	float LeanAngle = 5.f;
-
-// 	/* the speed of leaning */
-// 	UPROPERTY(VisibleAnywhere, Category = "Actions | Leaning")
-// 	float LeanSpeed = 5.f;
-
-// #pragma endregion
 
 #pragma region LANDING
 

@@ -10,9 +10,10 @@
 // Sets default values
 AInteractableActor::AInteractableActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	ActionType = EActionType::Interacting;
 }
 
 
@@ -20,7 +21,7 @@ AInteractableActor::AInteractableActor()
 void AInteractableActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 }
 
 
@@ -32,7 +33,7 @@ void AInteractableActor::Tick(float DeltaTime)
 }
 
 
-void AInteractableActor::Interact_Implementation(AActor* Caller)
+void AInteractableActor::DoAction_Implementation(AActor* Caller)
 {
 	if (GEngine)
 	{
@@ -45,15 +46,12 @@ void AInteractableActor::StartFocus_Implementation()
 {
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Emerald, FString::Printf(TEXT("Focusing")));
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Emerald, FString::Printf(TEXT("Focusing on Interactable object")));
 	}
 }
 
 
 void AInteractableActor::EndFocus_Implementation()
 {
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Emerald, FString::Printf(TEXT("Ending focus")));
-	}
+	Super::EndFocus_Implementation();
 }
