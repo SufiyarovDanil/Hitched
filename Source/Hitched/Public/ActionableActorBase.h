@@ -24,7 +24,11 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	/* */
 	EActionType GetActionType() const { return ActionType; };
+
+	/* */
+	bool IsVaultable() const { return bIsVaultable; }
 
 #pragma region INTERACT_INTERFACE
 
@@ -50,5 +54,11 @@ protected:
 	/* Enum which determines how to interact with the actor */
 	UPROPERTY(VisibleAnywhere, Category = "Action Type")
 	EActionType ActionType;
+
+private:
+
+	/* */
+	UPROPERTY(VisibleAnywhere, Category = "Vaulting")
+	bool bIsVaultable;
 
 };

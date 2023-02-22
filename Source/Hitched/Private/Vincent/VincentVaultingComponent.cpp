@@ -6,6 +6,7 @@
 
 #include "Vincent/VincentVaultingComponent.h"
 #include "Vincent/VincentBloodberry.h"
+#include "ActionableActorBase.h"
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -53,7 +54,7 @@ void UVincentVaultingComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	switch (VaultState)
 	{
 	case EVaultState::NotVaulting:
-		CanVault();
+		//CanVault();
 		break;
 	case EVaultState::Vaulting:
 		TickVault(DeltaTime);
@@ -134,6 +135,26 @@ bool UVincentVaultingComponent::CanVault()
 
 bool UVincentVaultingComponent::CanVaultToHit(const FHitResult& HitResult)
 {
+	//Make sure that actor is not simulating physics
+	if (HitResult.GetActor()->GetRootComponent()->IsSimulatingPhysics())
+	{
+		return false;
+	}
+
+	//If Actor is actionable, make sure that's vaultable
+	if (AActionableActorBase* AAB = Cast<AActionableActorBase>(HitResult.GetActor()))
+	{
+		if (!AAB->IsVaultable())
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Emerald, FString::Printf(TEXT("That actor is not vaultablle")));
+			}
+
+			return false;
+		}
+	}
+
 	// Make sure that adjust is in range between min and max vaulting height
 	float Adjust = HitResult.Location.Z - HitResult.TraceEnd.Z;
 
@@ -197,12 +218,6 @@ bool UVincentVaultingComponent::CheckCapsuleCollision(const FVector Center, cons
 		EObjectTypeQuery::ObjectTypeQuery7,	// means Vehicle
 		EObjectTypeQuery::ObjectTypeQuery8	// means Destructible
 	};
-
-	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery1);	// means WorldStatic
-	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery2);	// means WorldDynamic
-	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery6);	// means PhysicsBody
-	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery7);	// means Vehicle
-	//ObjectTypes.Add(EObjectTypeQuery::ObjectTypeQuery8);	// means Destructible
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(OwningCharacter);

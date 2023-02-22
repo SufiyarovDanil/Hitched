@@ -71,7 +71,6 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	// Init lightgem component
 	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
 	LightGem->SetupAttachment(CameraCollision);
-	LightGem->SetRelativeLocation(CameraCollisionWalkLocation);
 
 	// When character yaw rotating, light gem output value changes. That's why we need to lock light gem rotation
 	LightGem->SetUsingAbsoluteRotation(true);
@@ -148,8 +147,8 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
-	PlayerInputComponent->BindKey(EKeys::C, IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
-	PlayerInputComponent->BindAction("Interact", IE_Released, this, &AVincentBloodberry::DoAction);
+	PlayerInputComponent->BindAction("ToggleCrouch", IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
+	PlayerInputComponent->BindAction("DoAction", IE_Released, this, &AVincentBloodberry::DoAction);
 
 	PlayerInputComponent->BindAxis("Lean", this, &AVincentBloodberry::OnLeaning);
 

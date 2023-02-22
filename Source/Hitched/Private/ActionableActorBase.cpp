@@ -14,6 +14,8 @@ AActionableActorBase::AActionableActorBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 	ActionType = EActionType::Interacting;
+
+	bIsVaultable = false;
 }
 
 
