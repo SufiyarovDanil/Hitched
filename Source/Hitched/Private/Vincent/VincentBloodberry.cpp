@@ -11,7 +11,7 @@
 #include "Vincent/LandingCameraShake.h"
 #include "Curves/CurveVector.h"
 #include "Camera/CameraComponent.h"
-#include "Camera/CameraShake.h"
+//#include "Camera/CameraShake.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Vincent/VincentMovementComponent.h"
@@ -131,6 +131,11 @@ void AVincentBloodberry::Tick(float DeltaTime)
 
 	HandleHeadBob(DeltaTime);
 	HandleCameraTransforms(DeltaTime);
+
+	if (GEngine && LightGem)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Light level: %f"), LightGem->GetBrightness()));
+	}
 }
 
 

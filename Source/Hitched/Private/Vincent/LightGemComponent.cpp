@@ -7,6 +7,8 @@
 #include "Vincent/LightGemComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 
 
 // Light gem texture render sizes
@@ -41,6 +43,14 @@ ULightGemComponent::ULightGemComponent()
 		Octahedron->SetStaticMesh(OctahedronAsset.Object);
 	}
 
+	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> MaterialParameterCollectionAsset(
+		TEXT("MaterialParameterCollection'/Game/Mechanics/LightLevel/LightLevelValueStorage.LightLevelValueStorage'"));
+
+	if (MaterialParameterCollectionAsset.Succeeded())
+	{
+		LightLevelValueStorage = MaterialParameterCollectionAsset.Object;
+	}
+
 	Octahedron->SetupAttachment(this);
 	Octahedron->SetCastShadow(false);
 	// Lightgem system is a backend process, so player should not see the octahedron
@@ -67,6 +77,8 @@ void ULightGemComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+
+
 	RenderTargetTop = NewObject<UTextureRenderTarget2D>();
 	RenderTargetTop->InitCustomFormat(LIGHTGEM_TEX_WIDTH, LIGHTGEM_TEX_HEIGHT, EPixelFormat::PF_FloatRGB, false);
 	SceneCaptureTop->TextureTarget = RenderTargetTop;
@@ -83,11 +95,7 @@ void ULightGemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	ComputeBrightness();
-
-	/*if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Yellow, FString::Printf(TEXT("Light level: %f"), BrightnessOutput));
-	}*/
+	SetNewLightLevelValueToMaterialParamColl();
 }
 
 
@@ -136,4 +144,22 @@ float ULightGemComponent::FindBrightestPixel(UTextureRenderTarget2D* TextureTarg
 	}
 
 	return CurrentBrightestPixel;
+}
+
+
+void ULightGemComponent::SetNewLightLevelValueToMaterialParamColl()
+{
+	if (!LightLevelValueStorage)
+	{
+		return;
+	}
+
+	auto ParamCollInst = GetWorld()->GetParameterCollectionInstance(LightLevelValueStorage);
+
+	if (!ParamCollInst)
+	{
+		return;
+	}
+
+	ParamCollInst->SetScalarParameterValue("LightLevel", BrightnessOutput);
 }

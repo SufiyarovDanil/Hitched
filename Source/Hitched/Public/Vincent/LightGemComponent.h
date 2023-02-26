@@ -11,15 +11,16 @@
 
 
 class UTextureRenderTarget2D;
+class UMaterialParameterCollection;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class HITCHED_API ULightGemComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
 public:
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	float GetBrightness() const { return BrightnessOutput; }
 
 	UFUNCTION(BlueprintCallable)
@@ -52,6 +53,8 @@ private:
 
 	float FindBrightestPixel(UTextureRenderTarget2D* RenderTarget);
 
+	void SetNewLightLevelValueToMaterialParamColl();
+
 #pragma endregion
 
 #pragma region VARIABLES
@@ -65,6 +68,12 @@ private:
 	FRenderCommandFence CaptureFenceTop;
 
 	FRenderCommandFence CaptureFenceBottom;
+
+	/* That material parameter contains the light level value of this component
+	*  and we need to refresh this value every tick
+	*/
+	UPROPERTY(VisibleAnywhere, Category = "Material parameter")
+	UMaterialParameterCollection* LightLevelValueStorage = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "Tick Interval")
 	float LightUpdateInterval;
