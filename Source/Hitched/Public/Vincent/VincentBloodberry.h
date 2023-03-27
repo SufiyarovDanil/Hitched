@@ -19,6 +19,7 @@ class ULightGemComponent;
 class UVincentMovementComponent;
 class UVincentVaultingComponent;
 class UVincentLeaningComponent;
+class ULandImpactComponent;
 class UVincentActioningComponent;
 class UCurveVector;
 class UCurveFloat;
@@ -73,6 +74,9 @@ public:
 	UFUNCTION()
 	UVincentLeaningComponent* GetHead() const { return LeaningComp; }
 
+	UFUNCTION(BlueprintCallable)
+	bool IsLeftHandDrawing() const { return bIsLeftHandDrawing; }
+
 	/* For LightGem debugging */
 	UFUNCTION(BlueprintCallable)
 	ULightGemComponent* GetChildComp() const { return LightGem; }
@@ -86,6 +90,10 @@ protected:
 	/* Character's sphere component with collision. Protecting camera from wall clipping... maybe... */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* CameraCollision = nullptr;
+
+	/* Character's left hand skeletal mesh */
+	UPROPERTY(VisibleAnywhere, Category = "Hands")
+	USkeletalMeshComponent* LeftHand = nullptr;
 
 	/* Character's scene component that contains light detector called [Light Gem] */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -157,6 +165,9 @@ private:
 	/* Interacting with interactable actors */
 	void DoAction();
 
+	/* Drawing or Hiding left hand */
+	void ToggleShowWatch();
+
 	/* overrided function of ACharacter class */
 	virtual bool CanJumpInternal_Implementation() const override;
 
@@ -172,10 +183,17 @@ private:
 	/* Calling when character start Jumping */
 	virtual void Jump() override;
 
-	/* Starting/stopping to lean when lean buttons are pressed/released
-	*  @param Scale the value passed in by the Input Component
-	*/
-	void OnLeaning(float Scale);
+	/* */
+	void LeanLeft();
+
+	/* */
+	void UnleanLeft();
+
+	/* */
+	void LeanRight();
+
+	/* */
+	void UnleanRight();
 
 	/* Ticks the head bob timeline */
 	UFUNCTION()
@@ -225,28 +243,44 @@ private:
 #pragma region CROUCH
 
 	/* Character's Capsule half height when is in crouch movement state */
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Crouching")
 	float CrouchCapsuleHalfHeight;
 
 	/* Character's Capsule half height when is walking */
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Crouching")
 	float CapsuleHalfHeight;
 
 	/* Target Location for Head interp */
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Crouching")
 	FVector CameraCollisionCrouchLocation;
 
 	/* */
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Crouching")
 	float CrouchSpeed;
+
+#pragma endregion
+
+#pragma region HANDS
+
+	/* */
+	UPROPERTY(VisibleAnywhere, Category = "Hands")
+	bool bIsLeftHandDrawing;
 
 #pragma endregion
 
 #pragma region LANDING
 
-	/* Camera Shake that gives effective impact when character landing on any floor */
-	UPROPERTY(VisibleAnywhere, Category = "Landing")
-	TSubclassOf<UMatineeCameraShake> LandingCamShake = nullptr;
+	/* Animation Timeline starts when character landed on lower surface */
+	UPROPERTY(VisibleAnywhere, Category = "Landing | AnimTimeline")
+	ULandImpactComponent* LandImpactComp = nullptr;
+
+	/* That Value rewrites every time when character start jumping */
+	UPROPERTY(VisibleAnywhere, Category = "Landing | Jump Start Point")
+	FVector JumpStartPoint;
+
+	/* That value rewrites every time when character landing */
+	UPROPERTY(VisibleAnywhere, Category = "Landing | Jump End Point")
+	FVector JumpEndPoint;
 
 #pragma endregion
 

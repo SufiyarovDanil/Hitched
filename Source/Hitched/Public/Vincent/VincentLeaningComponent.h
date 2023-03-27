@@ -1,4 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+@Copyright Based Development.
+2022, 2023 Unpublished Work.
+*/
 
 #pragma once
 
@@ -8,6 +11,14 @@
 
 
 class AVincentBloodberry;
+
+/* Movement state enumerator contains all possible states */
+UENUM(BlueprintType)
+enum class ELeanState : uint8
+{
+	Left		UMETA(DisplayName = "Left Side"),
+	Right		UMETA(DisplayName = "Right Side"),
+};
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -21,6 +32,8 @@ public:
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	void SetLeanSide(ELeanState LeanState, bool NewSide);
 
 protected:
 	// Called when the game starts
@@ -39,19 +52,25 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Owner")
 	AVincentBloodberry* OwningCharacter = nullptr;
 
+	UPROPERTY(VisibleAnywhere, Category = "Lean | Side")
+	bool bIsLeaningLeft;
+
+	UPROPERTY(VisibleAnywhere, Category = "Lean | Side")
+	bool bIsLeaningRight;
+
 	UPROPERTY(VisibleAnywhere, Category = "Max Lean Distance")
 	float MaxLeanDistance;
 
 	UPROPERTY(VisibleAnywhere, Category = "Max Lean Angle")
 	float MaxLeanAngle;
 
-	UPROPERTY(VisibleAnywhere, Category = " Lean offset of Y axis")
+	UPROPERTY(VisibleAnywhere, Category = "Lean | offset of Y axis")
 	float LeanOffsetY;
 
-	UPROPERTY(VisibleAnywhere, Category = "Lean offset roll")
+	UPROPERTY(VisibleAnywhere, Category = "Lean | offset roll")
 	float LeanOffsetRoll;
 
-	UPROPERTY(VisibleAnywhere, Category = "Lean speed")
+	UPROPERTY(VisibleAnywhere, Category = "Lean | speed")
 	float LeanSpeed;
 
 #pragma endregion

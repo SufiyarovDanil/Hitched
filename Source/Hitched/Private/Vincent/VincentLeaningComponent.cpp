@@ -1,4 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/*
+@Copyright Based Development.
+2022, 2023 Unpublished Work.
+*/
 
 
 #include "Vincent/VincentLeaningComponent.h"
@@ -12,6 +15,8 @@ UVincentLeaningComponent::UVincentLeaningComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+	bIsLeaningLeft = false;
+	bIsLeaningRight = false;
 	MaxLeanDistance = 50.f;
 	MaxLeanAngle = 5.f;
 	LeanOffsetY = 0.f;
@@ -45,12 +50,24 @@ void UVincentLeaningComponent::TickLeaning(const float DeltaTime)
 		return;
 	}
 
-	const float LeanAxis = FMath::Sign(OwningCharacter->GetInputAxisValue(TEXT("Lean")));
+	//const float LeanAxis = FMath::Sign(OwningCharacter->GetInputAxisValue(TEXT("Lean")));
 
 	// Calculating relative location
 	const FVector ComponentLocation = GetRelativeLocation();
 
-	LeanOffsetY = FMath::FInterpTo(LeanOffsetY, MaxLeanDistance * LeanAxis, DeltaTime, LeanSpeed);
+	float LeanSide = 0.f;
+
+	if (bIsLeaningLeft)
+	{
+		LeanSide -= 1.f;
+	}
+
+	if (bIsLeaningRight)
+	{
+		LeanSide += 1.f;
+	}
+
+	LeanOffsetY = FMath::FInterpTo(LeanOffsetY, MaxLeanDistance * LeanSide, DeltaTime, LeanSpeed);
 
 	const FVector NewComponentLocation(ComponentLocation.X, LeanOffsetY, ComponentLocation.Z);
 
@@ -59,7 +76,7 @@ void UVincentLeaningComponent::TickLeaning(const float DeltaTime)
 	// Calculating Character control rotation
 	const FRotator CurrentControlRotation = OwningCharacter->GetController()->GetControlRotation();
 
-	const float NextInterpLeanOffsetRoll = FMath::FInterpTo(LeanOffsetRoll, MaxLeanAngle * LeanAxis, DeltaTime, LeanSpeed);
+	const float NextInterpLeanOffsetRoll = FMath::FInterpTo(LeanOffsetRoll, MaxLeanAngle * LeanSide, DeltaTime, LeanSpeed);
 	const float Adjust = NextInterpLeanOffsetRoll - LeanOffsetRoll;
 
 	LeanOffsetRoll = NextInterpLeanOffsetRoll;
@@ -72,4 +89,20 @@ void UVincentLeaningComponent::TickLeaning(const float DeltaTime)
 	);
 
 	OwningCharacter->GetController()->SetControlRotation(NewControlRotation);
+}
+
+
+void UVincentLeaningComponent::SetLeanSide(ELeanState LeanState, bool NewSide)
+{
+	switch (LeanState)
+	{
+	case ELeanState::Left:
+		bIsLeaningLeft = NewSide;
+		break;
+	case ELeanState::Right:
+		bIsLeaningRight = NewSide;
+		break;
+	default:
+		break;
+	}
 }

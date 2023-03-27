@@ -54,7 +54,6 @@ void UVincentVaultingComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	switch (VaultState)
 	{
 	case EVaultState::NotVaulting:
-		//CanVault();
 		break;
 	case EVaultState::Vaulting:
 		TickVault(DeltaTime);
@@ -183,11 +182,6 @@ bool UVincentVaultingComponent::CanVaultToHit(const FHitResult& HitResult)
 	{
 		return false;
 	}
-
-	/*if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Emerald, FString::Printf(TEXT("Can vault")));
-	}*/
 
 	return true;
 }

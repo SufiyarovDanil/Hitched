@@ -7,16 +7,15 @@
 #include "Vincent/VincentBloodberry.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
-#include "Vincent/LightGemComponent.h"
-#include "Vincent/LandingCameraShake.h"
 #include "Curves/CurveVector.h"
 #include "Camera/CameraComponent.h"
-//#include "Camera/CameraShake.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Vincent/LightGemComponent.h"
 #include "Vincent/VincentMovementComponent.h"
 #include "Vincent/VincentVaultingComponent.h"
 #include "Vincent/VincentLeaningComponent.h"
+#include "Vincent/LandImpactComponent.h"
 #include "Vincent/VincentActioningComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -62,11 +61,39 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	CameraCollision->SetupAttachment(LeaningComp);
 	CameraCollision->SetSphereRadius(CameraCollisionRadius);
 
+	// Land Impact Init
+	LandImpactComp = CreateDefaultSubobject<ULandImpactComponent>(TEXT("Land Timeline"));
+	LandImpactComp->SetupAttachment(CameraCollision);
+
 	// Set camera parameters
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
-	Camera->SetupAttachment(CameraCollision);
+	Camera->SetupAttachment(LandImpactComp);
 	Camera->SetFieldOfView(100.f);
 	Camera->bUsePawnControlRotation = true;
+
+	// Init left hand
+	LeftHand = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Left Hand"));
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> LeftHandAsset(
+		TEXT("SkeletalMesh'/Game/Vincent/Meshes/LeftHand.LeftHand'"));
+
+	if (LeftHandAsset.Succeeded())
+	{
+		LeftHand->SetSkeletalMesh(LeftHandAsset.Object);
+	}
+
+	bIsLeftHandDrawing = false;
+
+	LeftHand->SetupAttachment(Camera);
+
+	static ConstructorHelpers::FObjectFinder<UClass> LeftHandAnimBPAsset(
+		TEXT("Class'/Game/Vincent/Animations/LeftHandAnimBP.LeftHandAnimBP_C'"));
+
+	if (LeftHandAnimBPAsset.Succeeded())
+	{
+		LeftHand->SetAnimationMode(EAnimationMode::Type::AnimationBlueprint);
+		LeftHand->SetAnimInstanceClass(LeftHandAnimBPAsset.Object);
+	}
 
 	// Init lightgem component
 	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
@@ -92,8 +119,6 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	{
 		FootStepSound = SoundCueAsset.Object;
 	}
-
-	LandingCamShake = ULandingCameraShake::StaticClass();
 }
 
 
@@ -154,8 +179,11 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 	PlayerInputComponent->BindAction("ToggleCrouch", IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
 	PlayerInputComponent->BindAction("DoAction", IE_Released, this, &AVincentBloodberry::DoAction);
-
-	PlayerInputComponent->BindAxis("Lean", this, &AVincentBloodberry::OnLeaning);
+	PlayerInputComponent->BindAction("ToggleShowWatch", IE_Pressed, this, &AVincentBloodberry::ToggleShowWatch);
+	PlayerInputComponent->BindAction("Lean Left", IE_Pressed, this, &AVincentBloodberry::LeanLeft);
+	PlayerInputComponent->BindAction("Lean Left", IE_Released, this, &AVincentBloodberry::UnleanLeft);
+	PlayerInputComponent->BindAction("Lean Right", IE_Pressed, this, &AVincentBloodberry::LeanRight);
+	PlayerInputComponent->BindAction("Lean Right", IE_Released, this, &AVincentBloodberry::UnleanRight);
 
 	// Movement input
 	PlayerInputComponent->BindAxis("Move Forward", this, &AVincentBloodberry::MoveForward);
@@ -194,21 +222,13 @@ void AVincentBloodberry::HandleHeadBob(float DeltaTime)
 
 void AVincentBloodberry::HandleCameraTransforms(float DeltaTime)
 {
-	// Calculating head lean
-	//const FRotator CurrentControlRotation = GetController()->GetControlRotation();
-	//const float CalculatedCameraLeanRoll =  CurrentControlRotation.Roll - CurrentCameraLeanRoll;
-	//const FRotator CalculatedCameraRotation(CurrentControlRotation.Pitch, CurrentControlRotation.Yaw, CalculatedCameraLeanRoll);
-
 	const FVector CurrentCameraCollLocation = GetHead()->GetRelativeLocation();
 	const float CameraCollLocationHeightTarget = (GetCharacterMovement()->IsCrouching()) ?
 		CameraCollisionCrouchLocation.Z : CameraCollisionWalkLocation.Z;
 	const float InterpCameraCollHeight = FMath::FInterpTo(CurrentCameraCollLocation.Z, CameraCollLocationHeightTarget, DeltaTime, CrouchSpeed);
-	//const FVector CalculatedCameraCollLocation(CurrentCameraCollLocation.X, CurrentCameraLeanY, InterpCameraCollHeight);
 	const FVector CalculatedCameraCollLocation(CurrentCameraCollLocation.X, CurrentCameraCollLocation.Y, InterpCameraCollHeight);
 
 	GetHead()->SetRelativeLocation(CalculatedCameraCollLocation);
-	//LeaningComp->SetRelativeLocation(CalculatedCameraCollLocation);
-	//GetController()->SetControlRotation(CalculatedCameraRotation);
 }
 
 
@@ -249,28 +269,10 @@ void AVincentBloodberry::MoveForward(float Scale)
 
 void AVincentBloodberry::MoveRight(float Scale)
 {
-	//const float DeltaTime = GetWorld()->DeltaTimeSeconds;
-
 	if (Scale != 0.0f && bCanMove && !VaultingComp->IsVaulting())
 	{
 		AddMovementInput(GetActorRightVector(), Scale);
 	}
-
-	//CurrentCameraTiltRoll = FMath::FInterpTo(CurrentCameraTiltRoll, CameraTiltAngle * Scale, DeltaTime, CameraTiltSpeed);
-}
-
-
-void AVincentBloodberry::OnLeaning(float Scale)
-{
-	if (!bCanLean)
-	{
-		return;
-	}
-
-	//const float DeltaTime = GetWorld()->DeltaTimeSeconds;
-
-	//CurrentCameraLeanY = FMath::FInterpTo(CurrentCameraLeanY, LeanDistance * Scale, DeltaTime, LeanSpeed);
-	//CurrentCameraLeanRoll = FMath::FInterpTo(CurrentCameraLeanRoll, LeanAngle * Scale, DeltaTime, LeanSpeed);
 }
 
 
@@ -325,14 +327,24 @@ void AVincentBloodberry::DoAction()
 }
 
 
+void AVincentBloodberry::ToggleShowWatch()
+{
+	bIsLeftHandDrawing = !bIsLeftHandDrawing;
+}
+
+
 void AVincentBloodberry::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	if (LandingCamShake)
+	JumpEndPoint = GetActorLocation();
+
+	if (!LandImpactComp)
 	{
-		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(LandingCamShake);
+		return;
 	}
+
+	LandImpactComp->StartAnimation();
 }
 
 
@@ -417,7 +429,52 @@ void AVincentBloodberry::Jump()
 		}
 	}
 
+	JumpStartPoint = GetActorLocation();
 	Super::Jump();
+}
+
+
+void AVincentBloodberry::LeanLeft()
+{
+	if (!LeaningComp)
+	{
+		return;
+	}
+
+	LeaningComp->SetLeanSide(ELeanState::Left, true);
+}
+
+
+void AVincentBloodberry::UnleanLeft()
+{
+	if (!LeaningComp)
+	{
+		return;
+	}
+
+	LeaningComp->SetLeanSide(ELeanState::Left, false);
+}
+
+
+void AVincentBloodberry::LeanRight()
+{
+	if (!LeaningComp)
+	{
+		return;
+	}
+
+	LeaningComp->SetLeanSide(ELeanState::Right, true);
+}
+
+
+void AVincentBloodberry::UnleanRight()
+{
+	if (!LeaningComp)
+	{
+		return;
+	}
+
+	LeaningComp->SetLeanSide(ELeanState::Right, false);
 }
 
 
