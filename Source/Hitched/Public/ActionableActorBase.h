@@ -25,7 +25,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	/* */
-	EActionType GetActionType() const { return ActionType; };
+	EActionType GetActionType() const { return ActionType; }
 
 	/* */
 	bool IsVaultable() const { return bIsVaultable; }

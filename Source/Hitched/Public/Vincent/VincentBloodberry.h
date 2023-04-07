@@ -13,7 +13,6 @@
 
 
 class UCameraComponent;
-class UMatineeCameraShake;
 class USphereComponent;
 class ULightGemComponent;
 class UVincentMovementComponent;
@@ -21,9 +20,14 @@ class UVincentVaultingComponent;
 class UVincentLeaningComponent;
 class ULandImpactComponent;
 class UVincentActioningComponent;
+class UVincentInventoryComponent;
+class UAnimMontage;
 class UCurveVector;
 class UCurveFloat;
 class USoundCue;
+class AWeaponBase;
+class AInventory;
+
 
 /* Movement state enumerator contains all possible states */
 UENUM(BlueprintType)
@@ -60,7 +64,7 @@ struct FMovementCharacteristics
  *
  */
 UCLASS()
-class HITCHED_API AVincentBloodberry : public ACharacter //, public IInteract
+class HITCHED_API AVincentBloodberry : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -76,6 +80,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool IsLeftHandDrawing() const { return bIsLeftHandDrawing; }
+
+	UFUNCTION(BlueprintCallable)
+	bool IsRightHandDrawing() const { return bIsRightHandDrawing; }
+
+	/* Used to play one of the weapon animations in right hand */
+	virtual float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
 
 	/* For LightGem debugging */
 	UFUNCTION(BlueprintCallable)
@@ -94,6 +104,10 @@ protected:
 	/* Character's left hand skeletal mesh */
 	UPROPERTY(VisibleAnywhere, Category = "Hands")
 	USkeletalMeshComponent* LeftHand = nullptr;
+
+	/* Character's right hand skeletal mesh */
+	UPROPERTY(VisibleAnywhere, Category = "Hands")
+	USkeletalMeshComponent* RightHand = nullptr;
 
 	/* Character's scene component that contains light detector called [Light Gem] */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -114,6 +128,14 @@ protected:
 	/* Character's actioning component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UVincentActioningComponent* ActioningComp = nullptr;
+
+	/* Character's inventory component */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UVincentInventoryComponent* InventoryComp = nullptr;
+
+	/* Character's animation component */
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
+	AWeaponBase* CurrentWeapon = nullptr;
 
 private:
 
@@ -168,22 +190,25 @@ private:
 	/* Drawing or Hiding left hand */
 	void ToggleShowWatch();
 
+	/* Drawing or Hiding right hand */
+	void ToggleDrawRightHand();
+
 	/* overrided function of ACharacter class */
 	virtual bool CanJumpInternal_Implementation() const override;
 
 	/* Overrided function of ACharacter class */
 	virtual void Landed(const FHitResult& Hit) override;
 
-	/* Calling when character start crouch */
+	/* Calling when character starts crouch */
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
-	/* Calling when character start uncrouch */
+	/* Calling when character starts uncrouch */
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
-	/* Calling when character start Jumping */
+	/* Calling when character starts Jumping */
 	virtual void Jump() override;
 
-	/* */
+	/* Calling when character starts  */
 	void LeanLeft();
 
 	/* */
@@ -194,6 +219,12 @@ private:
 
 	/* */
 	void UnleanRight();
+
+	/* */
+	void StartFiring();
+
+	/* */
+	void ToggleInventory();
 
 	/* Ticks the head bob timeline */
 	UFUNCTION()
@@ -265,6 +296,10 @@ private:
 	/* */
 	UPROPERTY(VisibleAnywhere, Category = "Hands")
 	bool bIsLeftHandDrawing;
+
+	/* */
+	UPROPERTY(VisibleAnywhere, Category = "Hands")
+	bool bIsRightHandDrawing;
 
 #pragma endregion
 

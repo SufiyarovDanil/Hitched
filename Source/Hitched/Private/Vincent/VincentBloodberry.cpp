@@ -15,8 +15,10 @@
 #include "Vincent/VincentMovementComponent.h"
 #include "Vincent/VincentVaultingComponent.h"
 #include "Vincent/VincentLeaningComponent.h"
+#include "Vincent/Inventory/VincentInventoryComponent.h"
 #include "Vincent/LandImpactComponent.h"
 #include "Vincent/VincentActioningComponent.h"
+#include "Weapons/WeaponBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 
@@ -34,6 +36,9 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 
 	// Init vaulting component
 	VaultingComp = CreateDefaultSubobject<UVincentVaultingComponent>(TEXT("Vaulting"));
+
+	// Init Inventory Component
+	InventoryComp = CreateDefaultSubobject<UVincentInventoryComponent>(TEXT("Inventory"));
 
 	// Init interacting component
 	ActioningComp = CreateDefaultSubobject<UVincentActioningComponent>(TEXT("Actioning"));
@@ -82,9 +87,8 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 		LeftHand->SetSkeletalMesh(LeftHandAsset.Object);
 	}
 
-	bIsLeftHandDrawing = false;
-
 	LeftHand->SetupAttachment(Camera);
+	LeftHand->SetCastShadow(false);
 
 	static ConstructorHelpers::FObjectFinder<UClass> LeftHandAnimBPAsset(
 		TEXT("Class'/Game/Vincent/Animations/LeftHandAnimBP.LeftHandAnimBP_C'"));
@@ -94,6 +98,37 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 		LeftHand->SetAnimationMode(EAnimationMode::Type::AnimationBlueprint);
 		LeftHand->SetAnimInstanceClass(LeftHandAnimBPAsset.Object);
 	}
+
+	bIsLeftHandDrawing = false;
+
+	// Init right hand
+	RightHand = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Right Hand"));
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> RightHandAsset(
+		TEXT("SkeletalMesh'/Game/Vincent/Meshes/RightHand.RightHand'"));
+
+	if (RightHandAsset.Succeeded())
+	{
+		RightHand->SetSkeletalMesh(RightHandAsset.Object);
+	}
+
+	RightHand->SetupAttachment(Camera);
+	RightHand->SetCastShadow(false);
+
+	static ConstructorHelpers::FObjectFinder<UClass> RightHandAnimBPAsset(
+		TEXT("Class'/Game/Vincent/Animations/RightHandAnimBP.RightHandAnimBP_C'"));
+
+	if (RightHandAnimBPAsset.Succeeded())
+	{
+		RightHand->SetAnimationMode(EAnimationMode::Type::AnimationBlueprint);
+		RightHand->SetAnimInstanceClass(RightHandAnimBPAsset.Object);
+	}
+
+	bIsRightHandDrawing = false;
+
+	// Init weapon
+	//CurrentWeapon = CreateDefaultSubobject<AWeaponBase>(TEXT("Weapon"));
+	//CurrentWeapon->GetRootComponent()->AttachToComponent(RightHand, FAttachmentTransformRules::KeepRelativeTransform, TEXT("WeaponSocket"));
 
 	// Init lightgem component
 	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
@@ -174,16 +209,19 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAxis("Look Up", this, &APawn::AddControllerPitchInput);
 
 	// Action input
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AVincentBloodberry::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AVincentBloodberry::StopJumping);
 
-	PlayerInputComponent->BindAction("ToggleCrouch", IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
-	PlayerInputComponent->BindAction("DoAction", IE_Released, this, &AVincentBloodberry::DoAction);
-	PlayerInputComponent->BindAction("ToggleShowWatch", IE_Pressed, this, &AVincentBloodberry::ToggleShowWatch);
+	PlayerInputComponent->BindAction("Toggle Crouch", IE_Pressed, this, &AVincentBloodberry::ToggleCrouch);
+	PlayerInputComponent->BindAction("Do Action", IE_Released, this, &AVincentBloodberry::DoAction);
+	PlayerInputComponent->BindAction("Toggle Show Watch", IE_Pressed, this, &AVincentBloodberry::ToggleShowWatch);
+	PlayerInputComponent->BindAction("Toggle Draw Right Hand", IE_Pressed, this, &AVincentBloodberry::ToggleDrawRightHand);
 	PlayerInputComponent->BindAction("Lean Left", IE_Pressed, this, &AVincentBloodberry::LeanLeft);
 	PlayerInputComponent->BindAction("Lean Left", IE_Released, this, &AVincentBloodberry::UnleanLeft);
 	PlayerInputComponent->BindAction("Lean Right", IE_Pressed, this, &AVincentBloodberry::LeanRight);
 	PlayerInputComponent->BindAction("Lean Right", IE_Released, this, &AVincentBloodberry::UnleanRight);
+
+	PlayerInputComponent->BindAction("Toggle Inventory", IE_Pressed, this, &AVincentBloodberry::ToggleInventory);
 
 	// Movement input
 	PlayerInputComponent->BindAxis("Move Forward", this, &AVincentBloodberry::MoveForward);
@@ -260,7 +298,10 @@ void AVincentBloodberry::UpdateMovementCharacteristics(EMovementState NewMovemen
 
 void AVincentBloodberry::MoveForward(float Scale)
 {
-	if (Scale != 0.0f && bCanMove && !VaultingComp->IsVaulting())
+	if (Scale != 0.0f
+		&& bCanMove
+		&& !VaultingComp->IsVaulting()
+		&& InventoryComp->IsClosed())
 	{
 		AddMovementInput(GetActorForwardVector(), Scale);
 	}
@@ -269,7 +310,10 @@ void AVincentBloodberry::MoveForward(float Scale)
 
 void AVincentBloodberry::MoveRight(float Scale)
 {
-	if (Scale != 0.0f && bCanMove && !VaultingComp->IsVaulting())
+	if (Scale != 0.0f
+		&& bCanMove
+		&& !VaultingComp->IsVaulting()
+		&& InventoryComp->IsClosed())
 	{
 		AddMovementInput(GetActorRightVector(), Scale);
 	}
@@ -302,11 +346,14 @@ void AVincentBloodberry::StopRunning()
 
 void AVincentBloodberry::ToggleCrouch()
 {
-	if (!bCanCrouch || GetCharacterMovement()->IsFalling() || VaultingComp->IsVaulting())
+	if (!bCanCrouch
+		|| GetCharacterMovement()->IsFalling()
+		|| VaultingComp->IsVaulting()
+		|| !InventoryComp->IsClosed())
 	{
 		return;
 	}
-	
+
 	if (!GetCharacterMovement()->IsCrouching())
 	{
 		Crouch();
@@ -320,16 +367,36 @@ void AVincentBloodberry::ToggleCrouch()
 
 void AVincentBloodberry::DoAction()
 {
-	if (ActioningComp)
+	if (!ActioningComp
+		|| !InventoryComp
+		|| !InventoryComp->IsClosed())
 	{
-		ActioningComp->ActionButtonPressed();
+		return;
 	}
+
+	ActioningComp->ActionButtonPressed();
 }
 
 
 void AVincentBloodberry::ToggleShowWatch()
 {
+	if (VaultingComp->IsVaulting() || !InventoryComp->IsClosed())
+	{
+		return;
+	}
+
 	bIsLeftHandDrawing = !bIsLeftHandDrawing;
+}
+
+
+void AVincentBloodberry::ToggleDrawRightHand()
+{
+	if (VaultingComp->IsVaulting() || !InventoryComp->IsClosed())
+	{
+		return;
+	}
+
+	bIsRightHandDrawing = !bIsRightHandDrawing;
 }
 
 
@@ -351,7 +418,7 @@ void AVincentBloodberry::Landed(const FHitResult& Hit)
 /**
 * Original implementation of this function won't let
 * us using jump when character is crouching.
-* I erased several rows for correct work. 
+* I erased several rows for correct work.
 */
 bool AVincentBloodberry::CanJumpInternal_Implementation() const
 {
@@ -394,7 +461,7 @@ void AVincentBloodberry::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfH
 	UpdateMovementCharacteristics(EMovementState::Crouch);
 	FVector NewHeadLoc = GetHead()->GetRelativeLocation();
 	const float HeadHeightAdjust = CameraCollisionWalkLocation.Z - NewHeadLoc.Z;
-	
+
 	NewHeadLoc.Z = CameraCollisionWalkLocation.Z + (CameraCollisionWalkLocation.Z - CameraCollisionCrouchLocation.Z) - HeadHeightAdjust;
 
 	GetHead()->SetRelativeLocation(FVector(0.f)); // COSTYL
@@ -419,12 +486,17 @@ void AVincentBloodberry::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHei
 
 void AVincentBloodberry::Jump()
 {
+	if (!InventoryComp || !InventoryComp->IsClosed())
+	{
+		return;
+	}
+
 	if (VaultingComp)
 	{
 		if (VaultingComp->CanVault())
 		{
 			VaultingComp->Vault();
-			
+
 			return;
 		}
 	}
@@ -478,6 +550,36 @@ void AVincentBloodberry::UnleanRight()
 }
 
 
+void AVincentBloodberry::StartFiring()
+{
+	if (!CurrentWeapon)
+	{
+		return;
+	}
+
+	CurrentWeapon->StartFire();
+}
+
+
+void AVincentBloodberry::ToggleInventory()
+{
+	if (!InventoryComp
+		|| !GetCharacterMovement()->IsMovingOnGround()
+		|| VaultingComp->IsVaulting())
+	{
+		return;
+	}
+
+	if (InventoryComp->GetCurrentState() == EInventoryState::Closed
+		&& !GetCharacterMovement()->IsCrouching())
+	{
+		Crouch();
+	}
+
+	InventoryComp->ToggleButtonPressed();
+}
+
+
 void AVincentBloodberry::HeadBobTAnimProgress()
 {
 	const float TimelineValue = HeadBobTAnim.GetPlaybackPosition();
@@ -493,6 +595,18 @@ void AVincentBloodberry::MakeFootstep()
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FootStepSound, GetActorLocation());
 	}
+}
+
+
+float AVincentBloodberry::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
+{
+
+	if (!AnimMontage && !RightHand && !RightHand->AnimScriptInstance)
+	{
+		return 0.f;
+	}
+
+	return RightHand->AnimScriptInstance->Montage_Play(AnimMontage, InPlayRate);
 }
 
 
