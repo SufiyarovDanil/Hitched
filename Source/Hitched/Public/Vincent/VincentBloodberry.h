@@ -78,18 +78,27 @@ public:
 	UFUNCTION()
 	UVincentLeaningComponent* GetHead() const { return LeaningComp; }
 
+	/* For LightGem debugging */
+	UFUNCTION(BlueprintCallable)
+	ULightGemComponent* GetChildComp() const { return LightGem; }
+
+	/* Returns a reference to character's Inventory component */
+	UFUNCTION(BlueprintCallable)
+	UVincentInventoryComponent* GetInventoryComponent() const { return InventoryComp; }
+
 	UFUNCTION(BlueprintCallable)
 	bool IsLeftHandDrawing() const { return bIsLeftHandDrawing; }
 
 	UFUNCTION(BlueprintCallable)
 	bool IsRightHandDrawing() const { return bIsRightHandDrawing; }
 
+	UFUNCTION(BlueprintCallable)
+	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
+
 	/* Used to play one of the weapon animations in right hand */
 	virtual float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
 
-	/* For LightGem debugging */
-	UFUNCTION(BlueprintCallable)
-	ULightGemComponent* GetChildComp() const { return LightGem; }
+	virtual void StopAnimMontage(UAnimMontage* AnimMontage) override;
 
 protected:
 
@@ -133,7 +142,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UVincentInventoryComponent* InventoryComp = nullptr;
 
-	/* Character's animation component */
+	/* Character's equiped weapon */
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	AWeaponBase* CurrentWeapon = nullptr;
 
@@ -165,6 +174,8 @@ private:
 	/* Updates movement characteristics when */
 	void UpdateMovementCharacteristics(EMovementState NewMovementState);
 
+#pragma region INPUTS
+
 	/* Move the character forward/backward when move button is pressed
 	* @param Scale The value passed in by the Input Component
 	*/
@@ -187,24 +198,6 @@ private:
 	/* Interacting with interactable actors */
 	void DoAction();
 
-	/* Drawing or Hiding left hand */
-	void ToggleShowWatch();
-
-	/* Drawing or Hiding right hand */
-	void ToggleDrawRightHand();
-
-	/* overrided function of ACharacter class */
-	virtual bool CanJumpInternal_Implementation() const override;
-
-	/* Overrided function of ACharacter class */
-	virtual void Landed(const FHitResult& Hit) override;
-
-	/* Calling when character starts crouch */
-	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
-
-	/* Calling when character starts uncrouch */
-	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
-
 	/* Calling when character starts Jumping */
 	virtual void Jump() override;
 
@@ -220,11 +213,43 @@ private:
 	/* */
 	void UnleanRight();
 
+	/* Drawing or Hiding left hand */
+	void ToggleShowWatch();
+
+	/* Drawing or Hiding right hand */
+	void ToggleDrawRightHand();
+
 	/* */
 	void StartFiring();
 
+	/* Reloads weapon */
+	void ReloadWeapon();
+
 	/* */
 	void ToggleInventory();
+
+	/* */
+	void TakeSelectedItemFromInventory();
+
+#pragma endregion
+
+	/* */
+	void AttachWeaponToHand();
+
+	/* */
+	void DetachWeaponFromHand();
+
+	/* overrided function of ACharacter class */
+	virtual bool CanJumpInternal_Implementation() const override;
+
+	/* Overrided function of ACharacter class */
+	virtual void Landed(const FHitResult& Hit) override;
+
+	/* Calling when character starts crouch */
+	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+
+	/* Calling when character starts uncrouch */
+	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
 	/* Ticks the head bob timeline */
 	UFUNCTION()

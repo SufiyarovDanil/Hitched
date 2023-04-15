@@ -13,7 +13,8 @@
 
 class AVincentBloodberry;
 class AInventory;
-//struct FHitResult;
+class AWeaponBase;
+//class APickableActor;
 
 
 UENUM(BlueprintType)
@@ -44,6 +45,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Case Mesh")
 	AInventory* InventoryCase = nullptr;
 
+	/* Inventory you can add in inventory weapons only */
+	UPROPERTY(VisibleAnywhere, Category = "Inventory Storage")
+	TArray<AWeaponBase*> InventoryStorage;
+
+	/* Index of weapon in InventoryStorage */
+	UPROPERTY()
+	int32 CurrentItemIndex;
+
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Params | Trace")
@@ -55,17 +64,20 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Params | Time")
 	float CasePlacingTime;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Params | Time")
 	float CasePlacingProgressTime;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Params | Time")
 	float CaseClosingAnimTime;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Params | Time")
 	float CaseClosingAnimProgressTime;
 
 	UPROPERTY()
 	FVector CasePlaceLocation;
+
+	UPROPERTY()
+	FVector TheAssOfTheWorld;
 
 public:
 
@@ -75,12 +87,24 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void AddItem(AWeaponBase* Actor);
+
 	/*  */
 	void ToggleButtonPressed();
+
+	void NextItem();
+
+	void PrevItem();
+
+	bool CanPlaceCase(FHitResult& Hit);
 
 	bool IsClosed() const { return CurrentInventoryState == EInventoryState::Closed; }
 
 	EInventoryState GetCurrentState() const { return CurrentInventoryState; }
+
+	TArray<AWeaponBase*> GetInventoryStorage() const { return InventoryStorage; }
+
+	AWeaponBase* TakeSelectedItem();
 
 protected:
 
@@ -93,11 +117,11 @@ private:
 
 	void HideCase();
 
+	void MoveItemToInventoryCase(int32 ItemIndex);
+
 	void TickPlacingCase(const float DeltaTime);
 
 	void TickHidingCase(const float DeltaTime);
-
-	bool CanPlaceCase();
 
 	bool CanPlaceToHit(FHitResult& Hit, FCollisionShape& CaseCollision);
 

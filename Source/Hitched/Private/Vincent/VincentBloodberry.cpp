@@ -11,6 +11,7 @@
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Animation/AnimInstance.h"
 #include "Vincent/LightGemComponent.h"
 #include "Vincent/VincentMovementComponent.h"
 #include "Vincent/VincentVaultingComponent.h"
@@ -126,10 +127,6 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 
 	bIsRightHandDrawing = false;
 
-	// Init weapon
-	//CurrentWeapon = CreateDefaultSubobject<AWeaponBase>(TEXT("Weapon"));
-	//CurrentWeapon->GetRootComponent()->AttachToComponent(RightHand, FAttachmentTransformRules::KeepRelativeTransform, TEXT("WeaponSocket"));
-
 	// Init lightgem component
 	LightGem = CreateDefaultSubobject<ULightGemComponent>(TEXT("Light Gem"));
 	LightGem->SetupAttachment(CameraCollision);
@@ -221,7 +218,13 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Lean Right", IE_Pressed, this, &AVincentBloodberry::LeanRight);
 	PlayerInputComponent->BindAction("Lean Right", IE_Released, this, &AVincentBloodberry::UnleanRight);
 
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AVincentBloodberry::StartFiring);
+
 	PlayerInputComponent->BindAction("Toggle Inventory", IE_Pressed, this, &AVincentBloodberry::ToggleInventory);
+	PlayerInputComponent->BindAction("Next Item", IE_Pressed, InventoryComp, &UVincentInventoryComponent::NextItem);
+	PlayerInputComponent->BindAction("Prev Item", IE_Pressed, InventoryComp, &UVincentInventoryComponent::PrevItem);
+	PlayerInputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &AVincentBloodberry::TakeSelectedItemFromInventory);
+	PlayerInputComponent->BindKey(EKeys::R, IE_Pressed, this, &AVincentBloodberry::ReloadWeapon);
 
 	// Movement input
 	PlayerInputComponent->BindAxis("Move Forward", this, &AVincentBloodberry::MoveForward);
@@ -391,9 +394,20 @@ void AVincentBloodberry::ToggleShowWatch()
 
 void AVincentBloodberry::ToggleDrawRightHand()
 {
-	if (VaultingComp->IsVaulting() || !InventoryComp->IsClosed())
+	if (VaultingComp->IsVaulting()
+		|| !InventoryComp->IsClosed()
+		|| !CurrentWeapon)
 	{
 		return;
+	}
+
+	if (bIsRightHandDrawing)
+	{
+		CurrentWeapon->Unequip();
+	}
+	else
+	{
+		CurrentWeapon->Equip();
 	}
 
 	bIsRightHandDrawing = !bIsRightHandDrawing;
@@ -552,7 +566,7 @@ void AVincentBloodberry::UnleanRight()
 
 void AVincentBloodberry::StartFiring()
 {
-	if (!CurrentWeapon)
+	if (!CurrentWeapon || !bIsRightHandDrawing)
 	{
 		return;
 	}
@@ -561,8 +575,21 @@ void AVincentBloodberry::StartFiring()
 }
 
 
+void AVincentBloodberry::ReloadWeapon()
+{
+	if (!CurrentWeapon || !bIsRightHandDrawing)
+	{
+		return;
+	}
+
+	CurrentWeapon->Reload();
+}
+
+
 void AVincentBloodberry::ToggleInventory()
 {
+	FHitResult Hit; // Just a plug
+
 	if (!InventoryComp
 		|| !GetCharacterMovement()->IsMovingOnGround()
 		|| VaultingComp->IsVaulting())
@@ -570,13 +597,67 @@ void AVincentBloodberry::ToggleInventory()
 		return;
 	}
 
-	if (InventoryComp->GetCurrentState() == EInventoryState::Closed
-		&& !GetCharacterMovement()->IsCrouching())
+	if (InventoryComp->IsClosed())
+	{
+		if (!InventoryComp->CanPlaceCase(Hit))
+		{
+			return;
+		}
+	}
+
+	if (!GetCharacterMovement()->IsCrouching())
 	{
 		Crouch();
 	}
 
 	InventoryComp->ToggleButtonPressed();
+}
+
+
+void AVincentBloodberry::TakeSelectedItemFromInventory()
+{
+	if (!InventoryComp
+		|| (InventoryComp->GetCurrentState() != EInventoryState::Opened))
+	{
+		return;
+	}
+
+	if (CurrentWeapon)
+	{
+		InventoryComp->AddItem(CurrentWeapon);
+	}
+
+	DetachWeaponFromHand();
+
+	CurrentWeapon = InventoryComp->TakeSelectedItem();
+
+	AttachWeaponToHand();
+}
+
+
+void AVincentBloodberry::AttachWeaponToHand()
+{
+	if (!RightHand || !CurrentWeapon)
+	{
+		return;
+	}
+	
+	CurrentWeapon->AttachToComponent(RightHand, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
+	CurrentWeapon->SetActorRelativeLocation(CurrentWeapon->GetAttachLocation());
+	CurrentWeapon->SetActorRelativeRotation(CurrentWeapon->GetAttachRotation());
+}
+
+
+void AVincentBloodberry::DetachWeaponFromHand()
+{
+	if (!CurrentWeapon)
+	{
+		return;
+	}
+
+	CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	CurrentWeapon->SetActorRelativeLocation(FVector(0.f));
+	CurrentWeapon->SetActorRelativeRotation(FRotator(0.f));
 }
 
 
@@ -601,13 +682,24 @@ void AVincentBloodberry::MakeFootstep()
 float AVincentBloodberry::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
 {
 
-	if (!AnimMontage && !RightHand && !RightHand->AnimScriptInstance)
+	if (!AnimMontage || !RightHand || !RightHand->AnimScriptInstance)
 	{
 		return 0.f;
 	}
 
 	return RightHand->AnimScriptInstance->Montage_Play(AnimMontage, InPlayRate);
 }
+
+
+ void AVincentBloodberry::StopAnimMontage(UAnimMontage* AnimMontage)
+ {
+	if (!AnimMontage ||!RightHand ||!RightHand->AnimScriptInstance)
+	{
+		return;
+	}
+
+	RightHand->AnimScriptInstance->Montage_Stop(AnimMontage->BlendOut.GetBlendTime(), AnimMontage);
+ }
 
 
 void AVincentBloodberry::InitMovementCharacteristics()

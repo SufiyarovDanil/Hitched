@@ -20,7 +20,33 @@ UCLASS()
 class HITCHED_API APickableActor : public AActionableActorBase
 {
 	GENERATED_BODY()
-	
+
+protected:
+
+	UPROPERTY(VisibleAnywhere, Category = "Picking Character")
+	AVincentBloodberry* PickingCharacter = nullptr;
+
+	UPROPERTY(VisibleAnywhere, Category = "Mesh")
+	UStaticMeshComponent* PickableMesh = nullptr;
+
+private:
+
+	UPROPERTY(VisibleAnywhere, Category = "Parameters")
+	bool bIsPicked;
+
+	UPROPERTY(VisibleAnywhere, Category = "Parameters")
+	bool bIsPickedUpOnce;
+
+	/* the time of magnetise to character (this actor will be added to inventory in 'PickTime' seconds) */
+	UPROPERTY(VisibleAnywhere, Category = "Parameters")
+	float PickTime;
+
+	UPROPERTY(VisibleAnywhere, Category = "Parameters")
+	float PickTimeProgress;
+
+	UPROPERTY()
+	FVector PickStartLocation;
+
 public:
 
 	APickableActor();
@@ -47,24 +73,6 @@ protected:
 
 	void AddToInventory();
 
-	void OnAddingToInventory();
-
-private:
-
-	UPROPERTY(VisibleAnywhere, Category = "Picking Character")
-	AVincentBloodberry* PickingCharacter = nullptr;
-
-	UPROPERTY(VisibleAnywhere, Category = "Parameters")
-	bool bIsPicked;
-
-	/* the time of magnetise to character (this actor will be added to inventory in 'PickTime' seconds) */
-	UPROPERTY(VisibleAnywhere, Category = "Parameters")
-	float PickTime;
-
-	UPROPERTY(VisibleAnywhere, Category = "Parameters")
-	float PickTimeProgress;
-
-	UPROPERTY()
-	FVector PickStartLocation;
+	virtual void OnAddingToInventory();
 
 };

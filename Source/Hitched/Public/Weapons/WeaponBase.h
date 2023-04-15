@@ -7,7 +7,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-//#include "GameFramework/Actor.h"
 #include "Vincent/Inventory/PickableActor.h"
 #include "WeaponBase.generated.h"
 
@@ -24,6 +23,16 @@ enum class EWeaponState : uint8
 	Firing		UMETA(DisplayName = "Firing"),
 	Reloading	UMETA(DisplayName = "Reloading"),
 	Equipping	UMETA(DisplayName = "Equiping"),
+};
+
+
+UENUM(BlueprintType)
+enum class EWeapons : uint8
+{
+	Pistol	UMETA(DisplayName = "Pistol"),
+	Melee	UMETA(DisplayName = "Melee"),
+	Scope	UMETA(DisplayName = "Scope"),
+	Mine	UMETA(DisplayName = "Mine"),
 };
 
 
@@ -56,9 +65,13 @@ struct FWeaponData
 	UPROPERTY(EditDefaultsOnly, Category = "WeaponStat")
 	float TimeBetweenShots;
 
-	/* failsafe reload duration if weapon doesn't have any animation for it */
+	/* reload duration */
 	UPROPERTY(EditDefaultsOnly, Category = "WeaponStat")
-	float NoAnimReloadDuration;
+	float ReloadDuration;
+
+	/* equip/unequip duration */
+	UPROPERTY(EditDefaultsOnly, Category = "WeaponStat")
+	float EquipDuration;
 
 	/* defaults */
 	FWeaponData()
@@ -69,7 +82,8 @@ struct FWeaponData
 		AmmoPerClip = 20;
 		InitialClips = 4;
 		TimeBetweenShots = 0.2f;
-		NoAnimReloadDuration = 1.0f;
+		ReloadDuration = 1.f;
+		EquipDuration = 1.f;
 	}
 };
 
@@ -97,12 +111,16 @@ protected:
 	FWeaponData WeaponConfig;
 
 	/*  */
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Mesh")
-	UStaticMeshComponent* WeaponMesh = nullptr;
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Config")
+	EWeapons WeaponType;
 
 	/*  */
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Owner")
-	AVincentBloodberry* OwningCharacter = nullptr;
+	UPROPERTY(VisibleAnywhere, Category = "Attaching | Relative Location")
+	FVector AttachWeaponRelativeLocation;
+
+    /*  */
+	UPROPERTY(VisibleAnywhere, Category = "Attaching | Relative Rotation")
+	FRotator AttachWeaponRelativeRotation;
 
 #pragma region SOUNDS
 
@@ -130,19 +148,19 @@ protected:
 
 #pragma region ANIMATIONS
 
-	/* reload animations */
+	/* reload animation */
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* ReloadAnim = nullptr;
 
-	/* equip animations */
+	/* equip animation */
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* EquipAnim = nullptr;
 
-	/* unequip animations */
+	/* unequip animation */
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* UnequipAnim = nullptr;
 
-	/* fire animations */
+	/* fire animation */
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* FireAnim = nullptr;
 
@@ -176,6 +194,13 @@ public:
 	void Equip();
 
 	void Unequip();
+
+	FVector GetAttachLocation() const { return AttachWeaponRelativeLocation; }
+
+	FRotator GetAttachRotation() const { return AttachWeaponRelativeRotation; }
+
+	UFUNCTION(BlueprintCallable)
+	EWeapons GetWeaponType() const { return WeaponType; }
 
 protected:
 

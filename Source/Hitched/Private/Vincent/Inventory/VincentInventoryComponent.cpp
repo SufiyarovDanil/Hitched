@@ -9,8 +9,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Weapons/WeaponBase.h"
 #include "Vincent/VincentBloodberry.h"
 #include "Vincent/Inventory/Inventory.h"
+#include "Vincent/Inventory/PickableActor.h"
 
 
 // Sets default values for this component's properties
@@ -20,6 +22,7 @@ UVincentInventoryComponent::UVincentInventoryComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+	CurrentItemIndex = 0;
 	CurrentInventoryState = EInventoryState::Closed;
 	TraceForwardLength = 60.f;
 	AllowedFloorAngle = 15.f;
@@ -27,6 +30,7 @@ UVincentInventoryComponent::UVincentInventoryComponent()
 	CasePlacingProgressTime = 0.f;
 	CaseClosingAnimTime = 0.6f;
 	CaseClosingAnimProgressTime = 0.f;
+	TheAssOfTheWorld = FVector(0.f, 0.f, -100000.f);
 }
 
 
@@ -69,10 +73,10 @@ void UVincentInventoryComponent::TickPlacingCase(const float DeltaTime)
 		return;
 	}
 
-	const FVector CharacterLocation = OwningCharacter->GetActorLocation();
+	const FVector PlaceStartLocation = OwningCharacter->GetActorLocation() - (OwningCharacter->GetActorRightVector() * TraceForwardLength);
 	const FRotator CharacterRotation = OwningCharacter->GetActorRotation();
 	const FRotator CasePlaceRotation = FRotator(CharacterRotation.Pitch, CharacterRotation.Yaw + 90.f, CharacterRotation.Roll + 90.f);
-	const FVector NewLocation = FMath::Lerp(CharacterLocation, CasePlaceLocation, CasePlacingProgressTime * (1.f / CasePlacingTime));
+	const FVector NewLocation = FMath::Lerp(PlaceStartLocation, CasePlaceLocation, CasePlacingProgressTime * (1.f / CasePlacingTime));
 	const FRotator NewRotation = FMath::Lerp(CharacterRotation, CasePlaceRotation, CasePlacingProgressTime * (1.f / CasePlacingTime));
 
 	InventoryCase->SetActorLocationAndRotation(NewLocation, NewRotation);
@@ -81,6 +85,9 @@ void UVincentInventoryComponent::TickPlacingCase(const float DeltaTime)
 	{
 		CurrentInventoryState = EInventoryState::Opened;
 		InventoryCase->OpenCase();
+		CurrentItemIndex = 0;
+
+		MoveItemToInventoryCase(CurrentItemIndex);
 	}
 
 	CasePlacingProgressTime = FMath::Clamp(CasePlacingProgressTime + DeltaTime, 0.f, CasePlacingTime);
@@ -97,21 +104,29 @@ void UVincentInventoryComponent::TickHidingCase(const float DeltaTime)
 	if (CaseClosingAnimProgressTime <= CaseClosingAnimTime)
     {
 		CaseClosingAnimProgressTime += DeltaTime;
+
 		return;
 	}
 
-	const FVector CharacterLocation = OwningCharacter->GetActorLocation();
+	const FVector PlaceEndLocation = OwningCharacter->GetActorLocation() - (OwningCharacter->GetActorRightVector() * TraceForwardLength);
 	const FRotator CharacterRotation = OwningCharacter->GetActorRotation();
 	const FRotator CasePlaceRotation = FRotator(CharacterRotation.Pitch, CharacterRotation.Yaw + 90.f, CharacterRotation.Roll + 90.f);
-	const FVector NewLocation = FMath::Lerp(CasePlaceLocation, CharacterLocation, CasePlacingProgressTime * (1.f / CasePlacingTime));
+	const FVector NewLocation = FMath::Lerp(CasePlaceLocation, PlaceEndLocation, CasePlacingProgressTime * (1.f / CasePlacingTime));
 	const FRotator NewRotation = FMath::Lerp(CasePlaceRotation, CharacterRotation, CasePlacingProgressTime * (1.f / CasePlacingTime));
 
 	InventoryCase->SetActorLocationAndRotation(NewLocation, NewRotation);
+
+	if (InventoryStorage.Num() > 0
+		&& CurrentItemIndex >= 0 && CurrentItemIndex < InventoryStorage.Num())
+	{
+		InventoryStorage[CurrentItemIndex]->SetActorLocation(TheAssOfTheWorld);
+	}
 
 	if (CasePlacingProgressTime >= CasePlacingTime)
 	{
 		CurrentInventoryState = EInventoryState::Closed;
 		GetWorld()->DestroyActor(InventoryCase);
+
 		InventoryCase = nullptr;
 	}
 
@@ -126,13 +141,22 @@ void UVincentInventoryComponent::PlaceCase()
 		return;
 	}
 
-	if (!CanPlaceCase())
+	FHitResult HitResult;
+
+	if (!CanPlaceCase(HitResult))
 	{
 		return;
 	}
 
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, FString::Printf(TEXT("Inventory case %d"), InventoryStorage.Num()));
+	}
+
+	CasePlaceLocation = HitResult.Location;
 	CasePlacingProgressTime = 0.f;
 	InventoryCase = GetWorld()->SpawnActor<AInventory>();
+	CurrentItemIndex = 0;
 	CurrentInventoryState = EInventoryState::OnOpening;
 }
 
@@ -151,6 +175,21 @@ void UVincentInventoryComponent::HideCase()
 }
 
 
+void UVincentInventoryComponent::MoveItemToInventoryCase(int32 ItemIndex)
+{
+	if ((ItemIndex < 0 || ItemIndex > (InventoryStorage.Num()-1))
+		|| !InventoryCase)
+	{
+		return;
+	}
+
+	InventoryStorage[ItemIndex]
+		->SetActorLocationAndRotation(
+			InventoryCase->GetActorLocation(),
+			InventoryCase->GetActorRotation());
+}
+
+
 void UVincentInventoryComponent::ToggleButtonPressed()
 {
 	if (CurrentInventoryState == EInventoryState::Closed)
@@ -164,7 +203,50 @@ void UVincentInventoryComponent::ToggleButtonPressed()
 }
 
 
-bool UVincentInventoryComponent::CanPlaceCase()
+void UVincentInventoryComponent::NextItem()
+{
+	if (InventoryStorage.Num() == 0
+		|| CurrentInventoryState != EInventoryState::Opened)
+	{
+		return;
+	}
+
+	InventoryStorage[CurrentItemIndex]->SetActorLocation(TheAssOfTheWorld);
+	CurrentItemIndex = (CurrentItemIndex + 1) % InventoryStorage.Num();
+
+	MoveItemToInventoryCase(CurrentItemIndex);
+}
+
+
+void UVincentInventoryComponent::PrevItem()
+{
+	if (InventoryStorage.Num() == 0
+		|| CurrentInventoryState != EInventoryState::Opened)
+	{
+		return;
+	}
+
+	InventoryStorage[CurrentItemIndex]->SetActorLocation(TheAssOfTheWorld);
+	CurrentItemIndex = FMath::Abs((CurrentItemIndex - 1) % InventoryStorage.Num());
+
+	MoveItemToInventoryCase(CurrentItemIndex);
+}
+
+
+void UVincentInventoryComponent::AddItem(AWeaponBase* Weapon)
+{
+	if (!Weapon)
+	{
+		return;
+	}
+
+	InventoryStorage.AddUnique(Weapon);
+
+	Weapon->SetActorLocation(TheAssOfTheWorld);
+}
+
+
+bool UVincentInventoryComponent::CanPlaceCase(FHitResult& Hit)
 {
 	UCapsuleComponent* CharacterCapsule = OwningCharacter->GetCapsuleComponent();
 	const float CapsuleHalfHeight = CharacterCapsule->GetScaledCapsuleHalfHeight();
@@ -213,7 +295,7 @@ bool UVincentInventoryComponent::CanPlaceCase()
 		return false;
 	}
 
-	CasePlaceLocation = FirstHR.Location;
+	Hit = FirstHR;
 
 	return true;
 }
@@ -238,4 +320,22 @@ bool UVincentInventoryComponent::CanPlaceToHit(FHitResult& Hit, FCollisionShape&
 	}
 
 	return true;
+}
+
+
+AWeaponBase* UVincentInventoryComponent::TakeSelectedItem()
+{
+	if (CurrentItemIndex < 0 || CurrentItemIndex >= InventoryStorage.Num()
+		|| CurrentInventoryState != EInventoryState::Opened)
+	{
+		return nullptr;
+	}
+
+	AWeaponBase* TakenWeapon = InventoryStorage[CurrentItemIndex];
+	InventoryStorage.RemoveAt(CurrentItemIndex);
+	CurrentItemIndex = 0;
+
+	HideCase();
+
+	return TakenWeapon;
 }

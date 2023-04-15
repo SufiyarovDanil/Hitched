@@ -6,11 +6,22 @@
 
 #include "Vincent/Inventory/PickableActor.h"
 #include "Vincent/VincentBloodberry.h"
+#include "Vincent/Inventory/VincentInventoryComponent.h"
 
 
 APickableActor::APickableActor()
 {
+	PickableMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	PickableMesh->bReceivesDecals = false;
+	PickableMesh->CastShadow = false;
+	PickableMesh->SetCollisionObjectType(ECC_WorldDynamic);
+	PickableMesh->SetCollisionEnabled(ECollisionEnabled::Type::QueryAndPhysics);
+	PickableMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	PickableMesh->SetCollisionResponseToChannel(ECC_Vehicle, ECR_Ignore);
+	RootComponent = PickableMesh;
+
 	bIsPicked = false;
+	bIsPickedUpOnce = false;
 	PickTime = 0.2f;
 	PickTimeProgress = 0.f;
 }
@@ -36,7 +47,7 @@ void APickableActor::BeginPlay()
 
 void APickableActor::DoAction_Implementation(AActor* Caller)
 {
-	if (bIsPicked)
+	if (bIsPickedUpOnce)
 	{
 		return;
 	}
@@ -48,9 +59,11 @@ void APickableActor::DoAction_Implementation(AActor* Caller)
 		return;
 	}
 
+	PickableMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	PickStartLocation = GetActorLocation();
 	PickTimeProgress = 0.f;
 	bIsPicked = true;
+	bIsPickedUpOnce = true;
 }
 
 

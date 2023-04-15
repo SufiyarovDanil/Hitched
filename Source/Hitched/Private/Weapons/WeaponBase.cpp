@@ -14,14 +14,6 @@ AWeaponBase::AWeaponBase()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
-	WeaponMesh->bReceivesDecals = false;
-	WeaponMesh->CastShadow = false;
-	WeaponMesh->SetCollisionObjectType(ECC_WorldDynamic);
-	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-	RootComponent = WeaponMesh;
-
 	CurrentWeaponState = EWeaponState::Idle;
 }
 
@@ -50,49 +42,71 @@ void AWeaponBase::StartFire()
 	}
 
 	PlayWeaponAnimation(FireAnim);
+	SetWeaponState(EWeaponState::Firing);
 	GetWorldTimerManager().SetTimer(FiringCooldown, this, &AWeaponBase::OnEndFire, WeaponConfig.TimeBetweenShots, false);
 }
 
 
 void AWeaponBase::Reload()
 {
-	// ...
+	if (CurrentWeaponState != EWeaponState::Idle)
+	{
+		return;
+	}
+
+	PlayWeaponAnimation(ReloadAnim);
+	SetWeaponState(EWeaponState::Reloading);
+	GetWorldTimerManager().SetTimer(ReloadWeaponCooldown, this, &AWeaponBase::OnEndReload, WeaponConfig.ReloadDuration, false);
 }
 
 
 void AWeaponBase::Equip()
 {
-	// ...
+	if (CurrentWeaponState != EWeaponState::Idle)
+	{
+		return;
+	}
+
+	PlayWeaponAnimation(EquipAnim);
+	SetWeaponState(EWeaponState::Equipping);
+	GetWorldTimerManager().SetTimer(OnEquipFinishedCooldown, this, &AWeaponBase::OnEndEquip, WeaponConfig.EquipDuration, false);
 }
 
 
 void AWeaponBase::Unequip()
 {
-	// ...
+	if (CurrentWeaponState != EWeaponState::Idle)
+	{
+		return;
+	}
+
+	PlayWeaponAnimation(UnequipAnim);
+	SetWeaponState(EWeaponState::Equipping);
+	GetWorldTimerManager().SetTimer(OnEquipFinishedCooldown, this, &AWeaponBase::OnEndUnequip, WeaponConfig.EquipDuration, false);
 }
 
 
 void AWeaponBase::OnEndFire()
 {
-	CurrentWeaponState = EWeaponState::Idle;
+	SetWeaponState(EWeaponState::Idle);
 }
 
 
 void AWeaponBase::OnEndReload()
 {
-	// ...
+	SetWeaponState(EWeaponState::Idle);
 }
 
 
 void AWeaponBase::OnEndEquip()
 {
-	// ...
+	SetWeaponState(EWeaponState::Idle);
 }
 
 
 void AWeaponBase::OnEndUnequip()
 {
-	// ...
+	SetWeaponState(EWeaponState::Idle);
 }
 
 
@@ -110,23 +124,26 @@ void AWeaponBase::UpdateConfig(FWeaponData NewData)
 
 void AWeaponBase::PlayWeaponSound(USoundCue* Sound)
 {
-	if (Sound && OwningCharacter)
+	if (Sound && PickingCharacter)
 	{
-		//UGameplayStatics::SpawnSoundAttached(Sound, OwningCharacter->GetRootComponent());
+		//UGameplayStatics::SpawnSoundAttached(Sound, PickingCharacter->GetRootComponent());
 	}
 }
 
 
 void AWeaponBase::PlayWeaponAnimation(UAnimMontage* const Animation)
 {
-	if (Animation && OwningCharacter)
+	if (Animation && PickingCharacter)
 	{
-		OwningCharacter->PlayAnimMontage(Animation);
+		PickingCharacter->PlayAnimMontage(Animation);
 	}
 }
 
 
 void AWeaponBase::StopWeaponAnimation(UAnimMontage* const Animation)
 {
-	// ...
+	if (Animation && PickingCharacter)
+	{
+		PickingCharacter->StopAnimMontage(Animation);
+	}
 }

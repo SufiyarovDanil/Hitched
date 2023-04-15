@@ -8,19 +8,19 @@
 
 #include "CoreMinimal.h"
 #include "Weapons/WeaponBase.h"
-#include "KrugerMK1.generated.h"
+#include "Knife.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class HITCHED_API AKrugerMK1 : public AWeaponBase
+class HITCHED_API AKnife : public AWeaponBase
 {
 	GENERATED_BODY()
 	
 public:
 
-	AKrugerMK1();
+	AKnife();
 
 protected:
 
