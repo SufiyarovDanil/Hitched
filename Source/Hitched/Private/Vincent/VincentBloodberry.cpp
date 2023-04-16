@@ -7,10 +7,10 @@
 #include "Vincent/VincentBloodberry.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/FootstepComponent.h"
 #include "Curves/CurveVector.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Sound/SoundCue.h"
 #include "Animation/AnimInstance.h"
 #include "Vincent/LightGemComponent.h"
 #include "Vincent/VincentMovementComponent.h"
@@ -37,6 +37,9 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 
 	// Init vaulting component
 	VaultingComp = CreateDefaultSubobject<UVincentVaultingComponent>(TEXT("Vaulting"));
+
+	// Init footstep component
+	FootstepComp = CreateDefaultSubobject<UFootstepComponent>(TEXT("Footstep"));
 
 	// Init Inventory Component
 	InventoryComp = CreateDefaultSubobject<UVincentInventoryComponent>(TEXT("Inventory"));
@@ -142,15 +145,6 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	{
 		HeadBobCurve = HeadBobCurveAsset.Object;
 	}
-
-	// Sound base init
-	static ConstructorHelpers::FObjectFinder<USoundCue> SoundCueAsset(
-		TEXT("SoundCue'/Game/Sounds/Footsteps/Footsteps.Footsteps'"));
-
-	if (SoundCueAsset.Succeeded())
-	{
-		FootStepSound = SoundCueAsset.Object;
-	}
 }
 
 
@@ -204,6 +198,7 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	// Mouse things
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("Look Up", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AVincentBloodberry::StartFiring);
 
 	// Action input
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AVincentBloodberry::Jump);
@@ -217,8 +212,6 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Lean Left", IE_Released, this, &AVincentBloodberry::UnleanLeft);
 	PlayerInputComponent->BindAction("Lean Right", IE_Pressed, this, &AVincentBloodberry::LeanRight);
 	PlayerInputComponent->BindAction("Lean Right", IE_Released, this, &AVincentBloodberry::UnleanRight);
-
-	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AVincentBloodberry::StartFiring);
 
 	PlayerInputComponent->BindAction("Toggle Inventory", IE_Pressed, this, &AVincentBloodberry::ToggleInventory);
 	PlayerInputComponent->BindAction("Next Item", IE_Pressed, InventoryComp, &UVincentInventoryComponent::NextItem);
@@ -420,12 +413,13 @@ void AVincentBloodberry::Landed(const FHitResult& Hit)
 
 	JumpEndPoint = GetActorLocation();
 
-	if (!LandImpactComp)
+	if (!LandImpactComp || !FootstepComp)
 	{
 		return;
 	}
 
 	LandImpactComp->StartAnimation();
+	FootstepComp->OnLanded();
 }
 
 
@@ -672,10 +666,12 @@ void AVincentBloodberry::HeadBobTAnimProgress()
 
 void AVincentBloodberry::MakeFootstep()
 {
-	if (FootStepSound)
+	if (!FootstepComp)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, FootStepSound, GetActorLocation());
+		return;
 	}
+
+	FootstepComp->MakeFootstep();
 }
 
 

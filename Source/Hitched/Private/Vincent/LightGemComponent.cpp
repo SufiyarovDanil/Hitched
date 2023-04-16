@@ -12,8 +12,8 @@
 
 
 // Light gem texture render sizes
-static constexpr uint32 LIGHTGEM_TEX_WIDTH = 32u; // 16u
-static constexpr uint32 LIGHTGEM_TEX_HEIGHT = 32u; // 16u
+static constexpr uint32 LIGHTGEM_TEX_WIDTH = 32u;
+static constexpr uint32 LIGHTGEM_TEX_HEIGHT = 32u;
 
 // The brightness of octahedron's pixel is from 0 to 255.
 // We multiplying current brightness and LIGHTGEM_SCALE for normalize the output value (from 0 to 1)

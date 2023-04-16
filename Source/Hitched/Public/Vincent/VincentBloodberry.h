@@ -15,6 +15,7 @@
 class UCameraComponent;
 class USphereComponent;
 class ULightGemComponent;
+class UFootstepComponent;
 class UVincentMovementComponent;
 class UVincentVaultingComponent;
 class UVincentLeaningComponent;
@@ -92,6 +93,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsRightHandDrawing() const { return bIsRightHandDrawing; }
 
+	bool IsRunning() const { return bIsRunning; }
+
 	UFUNCTION(BlueprintCallable)
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 
@@ -133,6 +136,10 @@ protected:
 	/* Character's leaning component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UVincentLeaningComponent* LeaningComp = nullptr;
+
+	/* Character's footstep component */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UFootstepComponent* FootstepComp = nullptr;
 
 	/* Character's actioning component */
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -289,10 +296,6 @@ private:
 	/* Timeline for head bobbing when character is moving. Generated from the head bob curve */
 	UPROPERTY(VisibleAnywhere, Category = "Movement | Head Bob")
 	UCurveVector* HeadBobCurve = nullptr;
-
-	/* Character's foot step sound */
-	UPROPERTY(VisibleAnywhere, Category = "SFX | Foot Step")
-	USoundCue* FootStepSound = nullptr;
 
 #pragma endregion
 
