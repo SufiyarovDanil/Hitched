@@ -11,7 +11,8 @@
 			"AdditionalDependencies": [
 				"EngineSettings",
 				"Engine",
-				"GameplayCameras"
+				"GameplayCameras",
+				"AIModule"
 			]
 		}
 	],

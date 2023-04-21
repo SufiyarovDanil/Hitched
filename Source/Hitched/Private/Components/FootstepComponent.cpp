@@ -228,7 +228,7 @@ UPhysicalMaterial* UFootstepComponent::FindPhysMatOfFloor()
 
 void UFootstepComponent::PlaySound(USoundCue* Sound)
 {
-	if (!OwningCharacter || !Sound)
+	if (!OwningCharacter)
 	{
 		return;
 	}
