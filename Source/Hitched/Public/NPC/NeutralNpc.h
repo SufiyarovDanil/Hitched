@@ -25,8 +25,21 @@ class HITCHED_API ANeutralNpc : public ANpcBase, public IAction
 	
 protected:
 
+	/*  */
 	UPROPERTY(VisibleAnywhere, Category = "")
 	USoundCue* Replicas = nullptr;
+
+	/*  */
+	UPROPERTY(VisibleAnywhere, Category = "Outfit")
+	TArray<USkeletalMesh*> Hairs;
+
+	/*  */
+	UPROPERTY(VisibleAnywhere, Category = "Outfit")
+	TArray<USkeletalMesh*> TopClothes;
+
+	/*  */
+	UPROPERTY(VisibleAnywhere, Category = "Outfit")
+	TArray<USkeletalMesh*> BottomClothes;
 
 public:
 
@@ -47,5 +60,10 @@ public:
 	virtual void EndFocus_Implementation();
 
 #pragma endregion
+
+protected:
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
 };

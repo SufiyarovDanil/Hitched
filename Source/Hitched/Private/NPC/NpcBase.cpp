@@ -15,9 +15,15 @@ ANpcBase::ANpcBase()
 
 	HairMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Hair"));
 	HairMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	HairMesh->SetupAttachment(GetMesh());
 
-	ClothMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Cloth"));
-	ClothMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	TopClothMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Top Cloth"));
+	TopClothMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	TopClothMesh->SetupAttachment(GetMesh());
+
+	BottomClothMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Bottom Cloth"));
+	BottomClothMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	BottomClothMesh->SetupAttachment(GetMesh());
 }
 
 
@@ -31,9 +37,14 @@ void ANpcBase::BeginPlay()
 		HairMesh->SetMasterPoseComponent(GetMesh());
 	}
 
-	if (ClothMesh)
+	if (TopClothMesh)
 	{
-		ClothMesh->SetMasterPoseComponent(GetMesh());
+		TopClothMesh->SetMasterPoseComponent(GetMesh());
+	}
+
+	if (BottomClothMesh)
+	{
+		BottomClothMesh->SetMasterPoseComponent(GetMesh());
 	}
 }
 

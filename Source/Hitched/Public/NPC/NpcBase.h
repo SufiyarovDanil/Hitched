@@ -23,12 +23,19 @@ private:
 protected:
 
 	// Hair slot for customizing
+	UPROPERTY(VisibleAnywhere, Category = "Outfit")
 	USkeletalMeshComponent* HairMesh = nullptr;
 
-	// Cloth slot for customizing
-	USkeletalMeshComponent* ClothMesh = nullptr;
+	// Top cloth slot for customizing
+	UPROPERTY(VisibleAnywhere, Category = "Outfit")
+	USkeletalMeshComponent* TopClothMesh = nullptr;
+
+	// Bottom cloth slot for customizing
+	UPROPERTY(VisibleAnywhere, Category = "Outfit")
+	USkeletalMeshComponent* BottomClothMesh = nullptr;
 
 protected:
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
