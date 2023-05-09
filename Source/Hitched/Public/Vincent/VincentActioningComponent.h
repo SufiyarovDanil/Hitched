@@ -44,7 +44,7 @@ private:
 #pragma region VARIABLES
 
 	UPROPERTY(VisibleAnywhere, Category = "Actionable Actor Target")
-	AActionableActorBase* FocusedActionableActor = nullptr;
+	AActor* FocusedActionableActor = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "Interact Distance")
 	float TraceDistance;
@@ -55,7 +55,7 @@ private:
 
 	void TryToEndFocus();
 
-	void TryToStartFocus(AActionableActorBase* NewActor);
+	void TryToStartFocus(AActor* NewActor);
 
 #pragma endregion
 

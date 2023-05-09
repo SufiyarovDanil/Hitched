@@ -213,8 +213,9 @@ UPhysicalMaterial* UFootstepComponent::FindPhysMatOfFloor()
 	FCollisionQueryParams CollParams;
 	CollParams.AddIgnoredActor(OwningCharacter);
 	CollParams.bReturnPhysicalMaterial = true;
+	CollParams.bTraceComplex = true;
 
-	bool b = GetWorld()
+	GetWorld()
 		->LineTraceSingleByChannel(
 			Hit,
 			CharLoc,

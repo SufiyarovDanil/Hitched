@@ -11,14 +11,13 @@
 #include "NpcBase.generated.h"
 
 
+class UFootstepComponent;
+
+
 UCLASS()
 class HITCHED_API ANpcBase : public ACharacter
 {
 	GENERATED_BODY()
-
-private:
-
-	// ...
 
 protected:
 
@@ -33,6 +32,11 @@ protected:
 	// Bottom cloth slot for customizing
 	UPROPERTY(VisibleAnywhere, Category = "Outfit")
 	USkeletalMeshComponent* BottomClothMesh = nullptr;
+
+public:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
+	UFootstepComponent* FootstepComp = nullptr;
 
 protected:
 

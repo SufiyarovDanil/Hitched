@@ -58,23 +58,23 @@ void UVincentActioningComponent::TraceForward()
 	FVector Loc;
 	FRotator Rot;
 	FHitResult Hit;
+	FCollisionQueryParams CollParams;
+
+	CollParams.AddIgnoredActor(OwningCharacter);
 
 	OwningCharacter->GetController()->GetPlayerViewPoint(Loc, Rot);
 
 	const FVector Start = Loc;
 	const FVector End = Loc + (Rot.Vector() * TraceDistance);
 
-	GetWorld()->LineTraceSingleByChannel
+	if (!GetWorld()->LineTraceSingleByChannel
 	(
 		Hit,
 		Start,
 		End,
-		ECC_Visibility
-	);
-
-	AActionableActorBase* ActionableActor = Cast<AActionableActorBase>(Hit.GetActor());
-
-	if (!ActionableActor)
+		ECC_MAX,
+		CollParams
+	))
 	{
 		// It means that character focusing to nothing and we must end focus to actor
 		TryToEndFocus();
@@ -82,10 +82,18 @@ void UVincentActioningComponent::TraceForward()
 		return;
 	}
 
-	// if Character switch to new or other interactable actor
-	if (FocusedActionableActor != ActionableActor)
+	if (!Hit.GetActor()->Implements<UAction>())
 	{
-		TryToStartFocus(ActionableActor);
+		TryToEndFocus();
+
+		return;
+	}
+
+	// if Character switch to new or other interactable actor
+	if (FocusedActionableActor != Hit.GetActor())
+	{
+		TryToEndFocus();
+		TryToStartFocus(Hit.GetActor());
 	}
 }
 
@@ -97,22 +105,25 @@ void UVincentActioningComponent::ActionButtonPressed()
 		return;
 	}
 	
-	switch (FocusedActionableActor->GetActionType())
+	if (AActionableActorBase* ActionableActor = Cast<AActionableActorBase>(FocusedActionableActor))
 	{
-	case EActionType::Interacting:
-		break;
-	case EActionType::Grabbing:
-		if (bIsGrabbing)
+		switch (ActionableActor->GetActionType())
 		{
-			Drop();
+		case EActionType::Interacting:
+			break;
+		case EActionType::Grabbing:
+			if (bIsGrabbing)
+			{
+				Drop();
+			}
+			else
+			{
+				Grab();
+			}
+			break;
+		default:
+			break;
 		}
-		else
-		{
-			Grab();
-		}
-		break;
-	default:
-		break;
 	}
 
 	IAction::Execute_DoAction(FocusedActionableActor, OwningCharacter);
@@ -134,7 +145,7 @@ void UVincentActioningComponent::TryToEndFocus()
 }
 
 
-void UVincentActioningComponent::TryToStartFocus(AActionableActorBase* NewActor)
+void UVincentActioningComponent::TryToStartFocus(AActor* NewActor)
 {
 	IAction::Execute_StartFocus(NewActor);
 

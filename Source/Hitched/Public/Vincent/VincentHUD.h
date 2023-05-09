@@ -9,6 +9,7 @@
 #include "GameFramework/HUD.h"
 #include "VincentHUD.generated.h"
 
+
 /**
  * 
  */
@@ -33,10 +34,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Widget")
 	TSubclassOf<UUserWidget> LightGemWidgetClass;
 
-	UPROPERTY(VisibleAnywhere, Category = "Widget")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget")
 	UUserWidget* CurrentWidget = nullptr;
 
 private:
 
 	AVincentHUD();
+	
 };

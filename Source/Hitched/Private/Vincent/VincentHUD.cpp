@@ -23,6 +23,7 @@ AVincentHUD::AVincentHUD()
 	}
 }
 
+
 void AVincentHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -37,6 +38,7 @@ void AVincentHUD::BeginPlay()
 		}
 	}
 }
+
 
 void AVincentHUD::DrawHUD()
 {
@@ -56,6 +58,7 @@ void AVincentHUD::DrawHUD()
 		Canvas->DrawItem(TileItem);
 	}
 }
+
 
 void AVincentHUD::UpdateTexture(UTexture2D* NewTexture)
 {

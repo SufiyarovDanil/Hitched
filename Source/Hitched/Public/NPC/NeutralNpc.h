@@ -23,10 +23,15 @@ class HITCHED_API ANeutralNpc : public ANpcBase, public IAction
 {
 	GENERATED_BODY()
 	
+private:
+
+	UPROPERTY(VisibleAnywhere, Category = "State")
+	bool bIsTalking;
+
 protected:
 
 	/*  */
-	UPROPERTY(VisibleAnywhere, Category = "")
+	UPROPERTY(EditDefaultsOnly, Category = "")
 	USoundCue* Replicas = nullptr;
 
 	/*  */
@@ -40,6 +45,17 @@ protected:
 	/*  */
 	UPROPERTY(VisibleAnywhere, Category = "Outfit")
 	TArray<USkeletalMesh*> BottomClothes;
+
+private:
+
+	void StartTalking();
+
+	void EndTalking();
+
+protected:
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
 public:
 
@@ -60,10 +76,5 @@ public:
 	virtual void EndFocus_Implementation();
 
 #pragma endregion
-
-protected:
-
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
 };

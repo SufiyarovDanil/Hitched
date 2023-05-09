@@ -8,7 +8,18 @@ public class Hitched : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG", "RenderCore", "PhysicsCore" });
+		PublicDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"Core",
+				"CoreUObject",
+				"Engine",
+				"InputCore",
+				"UMG",
+				"RenderCore",
+				"PhysicsCore",
+                "NavigationSystem"
+            });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

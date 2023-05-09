@@ -18,6 +18,16 @@ AFemaleNeutralNpc::AFemaleNeutralNpc()
         GetMesh()->SetSkeletalMesh(FemaleMeshAsset.Object);
     }
 
+    // Init animation
+    static ConstructorHelpers::FObjectFinder<UClass> AnimBPAsset(
+		TEXT("Class'/Game/NPC/Female/Animations/FemaleAnimBP.FemaleAnimBP_C'"));
+
+	if (AnimBPAsset.Succeeded())
+	{
+		GetMesh()->SetAnimationMode(EAnimationMode::Type::AnimationBlueprint);
+		GetMesh()->SetAnimInstanceClass(AnimBPAsset.Object);
+	}
+
     // Init Hairs
     static ConstructorHelpers::FObjectFinder<USkeletalMesh> FemaleHair1Asset(
         TEXT("SkeletalMesh'/Game/NPC/Female/Meshes/Outfits/Hairs/FemaleHair1.FemaleHair1'"));

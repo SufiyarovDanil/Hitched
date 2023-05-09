@@ -5,6 +5,8 @@
 
 
 #include "NPC/NpcBase.h"
+#include "Components\FootstepComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values
@@ -24,6 +26,18 @@ ANpcBase::ANpcBase()
 	BottomClothMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Bottom Cloth"));
 	BottomClothMesh->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
 	BottomClothMesh->SetupAttachment(GetMesh());
+
+	// Init Footstep component
+	FootstepComp = CreateDefaultSubobject<UFootstepComponent>(TEXT("Footstep component"));
+
+	// Movement values
+	GetCharacterMovement()->MaxWalkSpeed = 200.f;
+	GetCharacterMovement()->SetWalkableFloorAngle(60);
+	GetCharacterMovement()->MaxAcceleration = 1024.f;
+	GetCharacterMovement()->BrakingFrictionFactor = 0.f;
+	GetCharacterMovement()->GroundFriction = 4.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 512.f;
+	GetCharacterMovement()->PerchRadiusThreshold = 20.f;
 }
 
 
