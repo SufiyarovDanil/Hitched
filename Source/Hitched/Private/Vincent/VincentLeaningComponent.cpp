@@ -17,7 +17,7 @@ UVincentLeaningComponent::UVincentLeaningComponent()
 
 	bIsLeaningLeft = false;
 	bIsLeaningRight = false;
-	MaxLeanDistance = 50.f;
+	MaxLeanDistance = 40.f;
 	MaxLeanAngle = 5.f;
 	LeanOffsetY = 0.f;
 	LeanOffsetRoll = 0.f;

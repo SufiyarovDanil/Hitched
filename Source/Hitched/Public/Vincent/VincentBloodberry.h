@@ -81,7 +81,10 @@ public:
 
 	/* For LightGem debugging */
 	UFUNCTION(BlueprintCallable)
-	ULightGemComponent* GetChildComp() const { return LightGem; }
+	ULightGemComponent* GetLightGem() const { return LightGem; }
+
+	/* Returns the brightness value from lightgem component */
+	float GetLightLevel();
 
 	/* Returns a reference to character's Inventory component */
 	UFUNCTION(BlueprintCallable)
@@ -238,6 +241,9 @@ private:
 	/* */
 	void TakeSelectedItemFromInventory();
 
+	/* */
+	void TogglePause();
+
 #pragma endregion
 
 	/* */
@@ -362,5 +368,8 @@ private:
 	bool bCanCrouch = false;
 
 #pragma endregion
+
+	UPROPERTY(VisibleAnywhere, Category = "Game")
+	bool bIsPaused;
 
 };

@@ -31,7 +31,7 @@ private:
 protected:
 
 	/*  */
-	UPROPERTY(EditDefaultsOnly, Category = "")
+	UPROPERTY(EditDefaultsOnly, Category = "SFX")
 	USoundCue* Replicas = nullptr;
 
 	/*  */

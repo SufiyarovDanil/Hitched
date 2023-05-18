@@ -32,7 +32,7 @@ ANpcBase::ANpcBase()
 
 	// Movement values
 	GetCharacterMovement()->MaxWalkSpeed = 200.f;
-	GetCharacterMovement()->SetWalkableFloorAngle(60);
+	GetCharacterMovement()->SetWalkableFloorAngle(60.f);
 	GetCharacterMovement()->MaxAcceleration = 1024.f;
 	GetCharacterMovement()->BrakingFrictionFactor = 0.f;
 	GetCharacterMovement()->GroundFriction = 4.f;

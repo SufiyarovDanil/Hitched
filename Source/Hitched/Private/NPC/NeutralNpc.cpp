@@ -27,21 +27,21 @@ void ANeutralNpc::BeginPlay()
 
     if (Hairs.Num() > 0)
     {
-        int32 HairIndex = FMath::RandRange(0, Hairs.Num() - 1); 
+        const int32 HairIndex = FMath::RandRange(0, Hairs.Num() - 1); 
 
         HairMesh->SetSkeletalMesh(Hairs[HairIndex]);
     }
 
     if (TopClothes.Num() > 0)
     {
-        int32 TopClothIndex = FMath::RandRange(0, TopClothes.Num() - 1); 
+        const int32 TopClothIndex = FMath::RandRange(0, TopClothes.Num() - 1); 
 
         TopClothMesh->SetSkeletalMesh(TopClothes[TopClothIndex]);
     }
 
     if (BottomClothes.Num() > 0)
     {
-        int32 BottomClothIndex = FMath::RandRange(0, BottomClothes.Num() - 1); 
+        const int32 BottomClothIndex = FMath::RandRange(0, BottomClothes.Num() - 1); 
 
         BottomClothMesh->SetSkeletalMesh(BottomClothes[BottomClothIndex]);
     }

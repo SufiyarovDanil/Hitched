@@ -37,10 +37,7 @@ void ANeutralAiController::Tick(float DeltaTime)
 
 void ANeutralAiController::TickWalking()
 {
-	EPathFollowingRequestResult::Type RequestResult = MoveToLocation
-	(
-		DestinationLocation
-	);
+	EPathFollowingRequestResult::Type RequestResult = MoveToLocation(DestinationLocation);
 
 	if (RequestResult == EPathFollowingRequestResult::Type::AlreadyAtGoal)
 	{

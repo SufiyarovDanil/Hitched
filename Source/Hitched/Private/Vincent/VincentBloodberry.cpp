@@ -145,6 +145,8 @@ AVincentBloodberry::AVincentBloodberry(const FObjectInitializer& ObjectInitializ
 	{
 		HeadBobCurve = HeadBobCurveAsset.Object;
 	}
+
+	bIsPaused = false;
 }
 
 
@@ -225,6 +227,8 @@ void AVincentBloodberry::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 	PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AVincentBloodberry::StartRunning);
 	PlayerInputComponent->BindAction("Run", IE_Released, this, &AVincentBloodberry::StopRunning);
+
+	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &AVincentBloodberry::TogglePause).bExecuteWhenPaused = true;
 }
 
 
@@ -629,6 +633,14 @@ void AVincentBloodberry::TakeSelectedItemFromInventory()
 }
 
 
+void AVincentBloodberry::TogglePause()
+{
+	UGameplayStatics::SetGamePaused(GetWorld(), !bIsPaused);
+
+	bIsPaused = !bIsPaused;
+}
+
+
 void AVincentBloodberry::AttachWeaponToHand()
 {
 	if (!RightHand || !CurrentWeapon)
@@ -675,6 +687,17 @@ void AVincentBloodberry::MakeFootstep()
 }
 
 
+float AVincentBloodberry::GetLightLevel()
+{
+	if (!LightGem)
+	{
+		return 0.f;
+	}
+	
+	return LightGem->GetBrightness();
+}
+
+
 float AVincentBloodberry::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
 {
 
@@ -701,8 +724,8 @@ float AVincentBloodberry::PlayAnimMontage(UAnimMontage* AnimMontage, float InPla
 void AVincentBloodberry::InitMovementCharacteristics()
 {
 	FMovementCharacteristics MovementWalking{};
-	MovementWalking.MoveSpeed = 111.f;
-	MovementWalking.FastMoveSpeed = 208.f;
+	MovementWalking.MoveSpeed = 150.f;
+	MovementWalking.FastMoveSpeed = 310.f;
 	MovementWalking.bCanMove = true;
 	MovementWalking.bCanLean = true;
 	MovementWalking.bCanCrouch = true;
